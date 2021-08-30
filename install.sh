@@ -149,6 +149,11 @@ else
     --restart=unless-stopped \
     --privileged \
     -e TZ="$SERVER_TIMEZONE" \
+    -e WATCHTOWER_HTTP_API_TOKEN="${WATCHTOWER_HTTP_API_TOKEN:-myverylongapikey}" \
+    --debug \
+    --http-api-update \
+    --http-api-metrics \
+    --rolling-restart \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config":/config \
