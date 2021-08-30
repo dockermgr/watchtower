@@ -70,8 +70,8 @@ NGINX_HTTP="${NGINX_HTTP:-80}"
 NGINX_HTTPS="${NGINX_HTTPS:-443}"
 SERVER_HOST="$(hostname -f 2>/dev/null || echo localhost)"
 SERVER_LISTEN="${SERVER_LISTEN:-$SERVER_IP}"
-SERVER_PORT="${SERVER_PORT:-}"
-SERVER_PORT_INT="${SERVER_PORT_INT:-}"
+SERVER_PORT="${SERVER_PORT:-15420}"
+SERVER_PORT_INT="${SERVER_PORT_INT:-8080}"
 SERVER_PORT_ADMIN="${SERVER_PORT_ADMIN:-}"
 SERVER_PORT_ADMIN_INT="${SERVER_PORT_ADMIN_INT:-}"
 SERVER_PORT_OTHER="${SERVER_PORT_OTHER:-}"
@@ -151,6 +151,7 @@ else
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config":/config \
     -v "$HOME/.docker/config.json:/config.json" \
+    -p $SERVER_LISTEN:$SERVER_PORT:$SERVER_PORT_INT \
     "$HUB_URL" &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
