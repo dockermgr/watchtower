@@ -150,16 +150,12 @@ else
     --privileged \
     -e TZ="$SERVER_TIMEZONE" \
     -e WATCHTOWER_HTTP_API_TOKEN="${WATCHTOWER_HTTP_API_TOKEN:-myverylongapikey}" \
-    --debug \
-    --http-api-update \
-    --http-api-metrics \
-    --rolling-restart \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config":/config \
     -v "$HOME/.docker/config.json:/config.json" \
     -p $SERVER_LISTEN:$SERVER_PORT:$SERVER_PORT_INT \
-    "$HUB_URL" &>/dev/null
+    "$HUB_URL" --debug --http-api-update --http-api-metrics --rolling-restart &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Install nginx proxy
