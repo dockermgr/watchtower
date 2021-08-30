@@ -72,10 +72,10 @@ SERVER_HOST="$(hostname -f 2>/dev/null || echo localhost)"
 SERVER_LISTEN="${SERVER_LISTEN:-$SERVER_IP}"
 SERVER_PORT="${SERVER_PORT:-}"
 SERVER_PORT_INT="${SERVER_PORT_INT:-}"
-SERVER_PORT_ADMIN="${SERVER_PORT_SSL:-}"
-SERVER_PORT_ADMIN_INT="${SERVER_PORT_SSL_INT:-}"
-SERVER_PORT_OTHER="${SERVER_PORT_SSL:-}"
-SERVER_PORT_OTHER_INT="${SERVER_PORT_SSL_INT:-}"
+SERVER_PORT_ADMIN="${SERVER_PORT_ADMIN:-}"
+SERVER_PORT_ADMIN_INT="${SERVER_PORT_ADMIN_INT:-}"
+SERVER_PORT_OTHER="${SERVER_PORT_OTHER:-}"
+SERVER_PORT_OTHER_INT="${SERVER_PORT_OTHER_INT:-}"
 SERVER_TIMEZONE="${TZ:-${TIMEZONE:-America/New_York}}"
 SERVER_SSL="${SERVER_SSL:-false}"
 SERVER_SSL_CRT="/etc/ssl/CA/CasjaysDev/certs/localhost.crt"
@@ -151,7 +151,6 @@ else
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config":/config \
     -v "$HOME/.docker/config.json:/config.json" \
-    -p $SERVER_LISTEN:$SERVER_PORT:$SERVER_PORT_INT \
     "$HUB_URL" &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
