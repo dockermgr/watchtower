@@ -153,7 +153,6 @@ else
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config":/config \
-    -v "$HOME/.docker/config.json:/config.json" \
     -p $SERVER_LISTEN:$SERVER_PORT:$SERVER_PORT_INT \
     "$HUB_URL" --debug --http-api-update --http-api-metrics --rolling-restart &>/dev/null
 fi
@@ -188,6 +187,7 @@ if docker ps -a | grep -qs "$APPNAME"; then
   printf_cyan "Installed to $INSTDIR"
   [[ -n "$SERVER_PORT" ]] && printf_blue "Service is running on: $SERVER_IP:$SERVER_PORT"
   [[ -n "$SERVER_PORT" ]] && printf_blue "and should be available at: $SERVER_HOST:$SERVER_PORT"
+  [[ -n "$SERVER_PORT" ]] && printf_blue 'To use api send curl -H "Authorization: Bearer '${WATCHTOWER_HTTP_API_TOKEN:-myverylongapikey}'" '$SERVER_HOST:$SERVER_PORT'/v1/update'
   [[ -z "$SERVER_PORT" ]] && printf_yellow "This container does not have a web interface"
 else
   printf_error "Something seems to have gone wrong with the install"
