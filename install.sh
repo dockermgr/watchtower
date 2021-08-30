@@ -66,6 +66,7 @@ APPVERSION="$(__appversion "$REPORAW/version.txt")"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup plugins
 HUB_URL="containrrr/watchtower"
+SERVER_IP="${CURRIP4:-127.0.0.1}"
 NGINX_HTTP="${NGINX_HTTP:-80}"
 NGINX_HTTPS="${NGINX_HTTPS:-443}"
 SERVER_HOST="$(hostname -f 2>/dev/null || echo localhost)"
