@@ -41,7 +41,7 @@ sudo docker run -d \
 -v "$HOME/.local/share/srv/docker/watchtower/data":/data:z \
 -v "$HOME/.local/share/srv/docker/watchtower/config":/config:z \
 -v /var/run/docker.sock:/var/run/docker.sock \
-containrrr/watchtower 1>/dev/null
+containrrr/watchtower &>/dev/null
 ```
 
 ## Author  

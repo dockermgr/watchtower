@@ -55,22 +55,22 @@ REPO_BRANCH="${GIT_REPO_BRANCH:-master}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Defaults
 APPNAME="GEN_README_REPLACE_APPNAME"
-APPDIR="$HOME/.local/share/docker/GEN_README_REPLACE_APPNAME"
-DATADIR="$HOME/.local/share/docker/GEN_README_REPLACE_APPNAME/files"
-INSTDIR="$HOME/.local/share/dockermgr/docker/GEN_README_REPLACE_APPNAME"
+APPDIR="$HOME/.local/share/srv/docker/GEN_README_REPLACE_APPNAME"
+DATADIR="$HOME/.local/share/srv/docker/GEN_README_REPLACE_APPNAME/files"
+INSTDIR="$HOME/.local/share/dockermgr/GEN_README_REPLACE_APPNAME"
 REPO="${DOCKERMGRREPO:-https://github.com/dockermgr}/GEN_README_REPLACE_APPNAME"
 REPORAW="$REPO/raw/$REPO_BRANCH"
 APPVERSION="$(__appversion "$REPORAW/version.txt")"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup plugins
 HUB_URL="containrrr/watchtower"
-SERVER_HOST="${APPNAME:-$(hostname -f 2>/dev/null)}"
-SERVER_PORT="${SERVER_PORT:-14000}"
-SERVER_PORT_INT="${SERVER_PORT_INT:-80}"
-SERVER_PORT_SSL="${SERVER_PORT_SSL:-15000}"
-SERVER_PORT_SSL_INT="${SERVER_PORT_SSL_INT:-443}"
-SERVER_PORT_ADMIN="${SERVER_PORT_SSL:-16000}"
-SERVER_PORT_ADMIN_INT="${SERVER_PORT_SSL_INT:-8080}"
+SERVER_HOST="$(hostname -f 2>/dev/null || echo localhost)"
+SERVER_PORT="${SERVER_PORT:-}"
+SERVER_PORT_INT="${SERVER_PORT_INT:-}"
+SERVER_PORT_ADMIN="${SERVER_PORT_SSL:-}"
+SERVER_PORT_ADMIN_INT="${SERVER_PORT_SSL_INT:-}"
+SERVER_PORT_OTHER="${SERVER_PORT_SSL:-}"
+SERVER_PORT_OTHER_INT="${SERVER_PORT_SSL_INT:-}"
 SERVER_TIMEZONE="${TZ:-${TIMEZONE:-America/New_York}}"
 SERVER_SSL="${SERVER_SSL:-false}"
 SERVER_SSL_CRT="/etc/ssl/CA/CasjaysDev/certs/localhost.crt"
@@ -116,7 +116,11 @@ if am_i_online; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Copy over data files - keep the same stucture as -v dataDir/mnt:/mount
-[[ -d "$INSTDIR/dataDir" ]] && cp -Rf "$INSTDIR/dataDir/*" "$DATADIR/"
+if [[ -d "$INSTDIR/dataDir" ]] && [[ ! -f "$DATADIR/.installed" ]]; then
+  printf_blue "Copying files to $DATADIR"
+  cp -Rf "$INSTDIR/dataDir/." "$DATADIR/"
+  touch "$DATADIR/.installed"
+fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Main progam
 if [ -f "$INSTDIR/docker-compose.yml" ] && cmd_exists docker-compose; then
@@ -137,11 +141,11 @@ else
     --restart=unless-stopped \
     --privileged \
     -e TZ="$SERVER_TIMEZONE" \
-    -v "$DATADIR/data":/data:z \
-    -v "$DATADIR/config":config:z \
+    -v "$DATADIR/data":/data \
+    -v "$DATADIR/config":config \
     -v "$HOME/.docker/config.json:/config.json" \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    "$HUB_URL" 1>/dev/null
+    "$HUB_URL" &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # run post install scripts
@@ -155,14 +159,16 @@ execute "run_postinst" "Running post install scripts"
 dockermgr_install_version
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # run exit function
+run_exit
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if docker ps -a | grep -qs "$APPNAME"; then
   printf_blue "DATADIR in $DATADIR"
   printf_cyan "Installed to $INSTDIR"
-  printf_blue "Service is available at: http://$SERVER_HOST:$SERVER_PORT"
+  printf_blue "Service is running on: $SERVER_IP:$SERVER_PORT"
+  printf_blue "and should be available at: $SERVER_HOST:$SERVER_PORT"
 else
   printf_error "Something seems to have gone wrong with the install"
 fi
-run_exit
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # End application
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
