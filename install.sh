@@ -154,7 +154,7 @@ else
     -v "$DATADIR/data":/data \
     -v "$DATADIR/config":/config \
     -p $SERVER_LISTEN:$SERVER_PORT:$SERVER_PORT_INT \
-    "$HUB_URL" --debug --http-api-update --http-api-metrics --rolling-restart &>/dev/null
+    "$HUB_URL" --debug --http-api-update --http-api-metrics --rolling-restart --interval 7200 --include-stopped --revive-stopped --cleanup &>/dev/null
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Install nginx proxy
