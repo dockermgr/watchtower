@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-APPNAME="GEN_README_REPLACE_APPNAME"
+APPNAME="watchtower"
 USER="${SUDO_USER:-${USER}}"
 HOME="${USER_HOME:-${HOME}}"
 SRC_DIR="${BASH_SOURCE%/*}"
@@ -13,7 +13,7 @@ if [[ "$1" == "--debug" ]]; then shift 1 && set -xo pipefail && export SCRIPT_OP
 # @Author        : Jason Hempstead
 # @Contact       : jason@casjaysdev.com
 # @License       : LICENSE.md
-# @ReadME        : install.sh --help
+# @ReadME        : README.md
 # @Copyright     : Copyright: (c) 2021 Jason Hempstead, CasjaysDev
 # @Created       : Sunday, Aug 29, 2021 14:03 EDT
 # @File          : install.sh
@@ -56,11 +56,11 @@ scripts_check
 REPO_BRANCH="${GIT_REPO_BRANCH:-master}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Defaults
-APPNAME="GEN_README_REPLACE_APPNAME"
-APPDIR="$HOME/.local/share/srv/docker/GEN_README_REPLACE_APPNAME"
-DATADIR="$HOME/.local/share/srv/docker/GEN_README_REPLACE_APPNAME/files"
-INSTDIR="$HOME/.local/share/dockermgr/GEN_README_REPLACE_APPNAME"
-REPO="${DOCKERMGRREPO:-https://github.com/dockermgr}/GEN_README_REPLACE_APPNAME"
+APPNAME="watchtower"
+APPDIR="$HOME/.local/share/srv/docker/watchtower"
+DATADIR="$HOME/.local/share/srv/docker/watchtower/files"
+INSTDIR="$HOME/.local/share/dockermgr/watchtower"
+REPO="${DOCKERMGRREPO:-https://github.com/dockermgr}/watchtower"
 REPORAW="$REPO/raw/$REPO_BRANCH"
 APPVERSION="$(__appversion "$REPORAW/version.txt")"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
