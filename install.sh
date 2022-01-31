@@ -188,7 +188,8 @@ run_postinst() {
   fi
 }
 #
-execute "run_postinst" "Running post install scripts"
+run_postinst
+#execute "run_postinst" "Running post install scripts"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # create version file
 dockermgr_install_version
