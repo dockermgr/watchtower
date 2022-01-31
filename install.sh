@@ -188,7 +188,6 @@ run_postinst() {
   fi
 }
 #
-run_postinst
 execute "run_postinst" "Running post install scripts"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # create version file
