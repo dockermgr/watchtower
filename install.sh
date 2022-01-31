@@ -189,8 +189,7 @@ run_postinst() {
 }
 #
 run_postinst
-failexitcode $? "Post install script has failed"
-#execute "run_postinst" "Running post install scripts"
+execute "run_postinst" "Running post install scripts"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # create version file
 dockermgr_install_version
