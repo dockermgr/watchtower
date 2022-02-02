@@ -81,6 +81,7 @@ SERVER_TIMEZONE="${TZ:-${TIMEZONE:-America/New_York}}"
 SERVER_SSLDIR="${SERVER_SSLDIR:-/etc/ssl/CA/CasjaysDev}"
 SERVER_SSL_CRT="${SERVER_SSL_CRT:-$SERVER_SSLDIR/certs/localhost.crt}"
 SERVER_SSL_KEY="${SERVER_SSL_KEY:-$SERVER_SSLDIR/private/localhost.key}"
+WATCHTOWER_HTTP_API_TOKEN="${WATCHTOWER_HTTP_API_TOKEN:-kTwRuavK3JqpRBZd8puxTU5kjfNeKR4vqkkzhmafQhR5lrMl}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Require a version higher than
 dockermgr_req_version "$APPVERSION"
@@ -174,8 +175,8 @@ fi
 # run post install scripts
 run_postinst() {
   dockermgr_run_post
-  echo '30 */6 * * * root curl -q -LSsf -H 'Authorization: Bearer '${WATCHTOWER_HTTP_API_TOKEN:-myverylongapikey}'' '$SERVER_HOST:$SERVER_PORT'/v1/update' >"/etc/cron.d/watchtower"
-  if ! grep -sq "$SERVER_HOST" /etc/hosts; then
+  echo '30 */6 * * * root curl -q -LSsf -H "Authorization: Bearer '${WATCHTOWER_HTTP_API_TOKEN:-myverylongapikey}'" '$SERVER_HOST:$SERVER_PORT'/v1/update' >"/etc/cron.d/watchtower"
+  if [ -w "/etc/hosts" ] && ! grep -sq "$SERVER_HOST" /etc/hosts; then
     if [[ -n "$SERVER_PORT_INT" ]]; then
       if [[ $(hostname -d 2>/dev/null | grep '^') = 'local' ]]; then
         [[ -w "/etc/hosts" ]] && echo "$SERVER_LISTEN     $APPNAME.local" | sudo tee -a /etc/hosts &>/dev/null
