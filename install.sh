@@ -174,6 +174,7 @@ fi
 # run post install scripts
 run_postinst() {
   dockermgr_run_post
+  echo '30 */6 * * * root curl -q -LSsf -H 'Authorization: Bearer '${WATCHTOWER_HTTP_API_TOKEN:-myverylongapikey}'' '$SERVER_HOST:$SERVER_PORT'/v1/update' >"/etc/cron.d/watchtower"
   if ! grep -sq "$SERVER_HOST" /etc/hosts; then
     if [[ -n "$SERVER_PORT_INT" ]]; then
       if [[ $(hostname -d 2>/dev/null | grep '^') = 'local' ]]; then
