@@ -185,7 +185,7 @@ run_postinst() {
         [[ -w "/etc/hosts" ]] && echo "$SERVER_LISTEN     $SERVER_HOST" | sudo tee -a /etc/hosts &>/dev/null
       fi
     fi
-  fi
+  fi || true
 }
 #
 execute "run_postinst" "Running post install scripts"
