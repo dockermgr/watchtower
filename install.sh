@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202308032216-git
+##@Version           :  202308032252-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.com
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2023 Jason Hempstead, Casjays Developments
-# @@Created          :  Thursday, Aug 03, 2023 22:16 EDT
+# @@Created          :  Thursday, Aug 03, 2023 22:52 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -27,7 +27,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="watchtower"
-VERSION="202308032216-git"
+VERSION="202308032252-git"
 REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 HOME="${USER_HOME:-$HOME}"
 USER="${SUDO_USER:-$USER}"
@@ -134,7 +134,7 @@ __run_pre_install() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define any post-install scripts
 run_post_install() {
-  [ -n "$NGINX_PROXY_URL" ] && echo "30 0 * * * root curl -H \"Authorization: Bearer mytoken\" \"http://$NGINX_PROXY_URL/v1/update\"" | sudo tee "/etc/cron.d/watchtower" &>/dev/null
+
   return 0
 }
 #
@@ -268,7 +268,7 @@ HOST_ETC_HOSTS_ENABLED="yes"
 HOST_ETC_HOSTS_INIT_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker socket - [yes/no] [/var/run/docker.sock]
-DOCKER_SOCKET_ENABLED="yes"
+DOCKER_SOCKET_ENABLED="no"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
@@ -385,7 +385,7 @@ CONTAINER_PASS_LENGTH="24"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If container has an admin password then set it here - [pass/random]
 CONTAINER_USER_ADMIN_PASS_ENV="random"
-CONTAINER_USER_ADMIN_PASS_LENGTH=""
+CONTAINER_USER_ADMIN_PASS_LENGTH="32"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set container username and password env name - [CONTAINER_ENV_USER_NAME=$CONTAINER_USER_NAME]
 CONTAINER_ENV_USER_NAME=""
@@ -453,6 +453,12 @@ CONTAINER_DEBUG_OPTIONS=""
 # additional directories to create - [/config/dir1,/data/dir2]
 CONTAINER_CREATE_DIRECTORY="/data/$APPNAME,/config/$APPNAME"
 CONTAINER_CREATE_DIRECTORY+=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# enable cron jobs
+HOST_CRON_ENABLED="yes"
+HOST_CRON_SCHEDULE="30 0 * * *"
+HOST_CRON_COMMAND="curl -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_ENV\" \"http://$NGINX_PROXY_URL/v1/update\""
+HOST_CRON_USER="root"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Show post install message
 POST_SHOW_FINISHED_MESSAGE=""
@@ -608,6 +614,11 @@ DOCKER_CAP_NET_ADMIN="\${ENV_DOCKER_CAP_NET_ADMIN:-$DOCKER_CAP_NET_ADMIN}"
 DOCKER_CAP_NET_BIND_SERVICE="\${ENV_DOCKER_CAP_NET_BIND_SERVICE:-$DOCKER_CAP_NET_BIND_SERVICE}"
 #
 CONTAINER_USER_ADMIN_PASS_LENGTH="\${ENV_CONTAINER_USER_ADMIN_PASS_LENGTH:-$CONTAINER_USER_ADMIN_PASS_LENGTH}"
+#
+HOST_CRON_ENABLED="${ENV_HOST_CRON_ENABLED:-$HOST_CRON_ENABLED}"
+HOST_CRON_SCHEDULE="${ENV_HOST_CRON_SCHEDULE:-$HOST_CRON_SCHEDULE}"
+HOST_CRON_COMMAND="${ENV_HOST_CRON_COMMAND:-$HOST_CRON_COMMAND}"
+HOST_CRON_USER="${ENV_HOST_CRON_USER:-$HOST_CRON_USER}"
 EOF
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2191,6 +2202,15 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     printf_yellow "The internal name is set to:            $HOST_NGINX_INTERNAL_DOMAIN"
   fi
   printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  if [ "$HOST_CRON_ENABLED" = "yes" ] && [ -n "$HOST_CRON_COMMAND" ] && [ -n "$NGINX_PROXY_URL" ]; then
+    [ -n "$HOST_CRON_USER" ] || HOST_CRON_USER="root"
+    [ -n "$HOST_CRON_SCHEDULE" ] || HOST_CRON_SCHEDULE="30 0 * * *"
+    printf_cyan   "Setting schedule to:                      $HOST_CRON_SCHEDULE"
+    printf_cyan   "Setting command  to:                      $HOST_CRON_COMMAND"
+    printf_yellow "Applying cron job to:                     /etc/cron.d/$CONTAINER_NAME"
+    echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND" | sudo tee "/etc/cron.d/$CONTAINER_NAME" &>/dev/null
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+ fi
   if __ssl_certs; then
     mkdir -p "$CONTAINER_SSL_DIR"
     __sudo_exec chmod -f 777 "$CONTAINER_SSL_DIR"
