@@ -134,7 +134,7 @@ __run_pre_install() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define any post-install scripts
 run_post_install() {
-
+  [ -n "$NGINX_PROXY_URL" ] && echo "30 0 * * * root curl -H \"Authorization: Bearer mytoken\" \"http://$NGINX_PROXY_URL/v1/update\"" | sudo tee "/etc/cron.d/watchtower" &>/dev/null
   return 0
 }
 #
