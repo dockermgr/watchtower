@@ -454,17 +454,19 @@ CONTAINER_DEBUG_OPTIONS=""
 CONTAINER_CREATE_DIRECTORY="/data/$APPNAME,/config/$APPNAME"
 CONTAINER_CREATE_DIRECTORY+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# enable cron jobs
-HOST_CRON_ENABLED="yes"
-HOST_CRON_SCHEDULE="30 0 * * *"
-HOST_CRON_COMMAND="curl -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_ENV\" \"http://$NGINX_PROXY_URL/v1/update\""
-HOST_CRON_USER="root"
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Show post install message
 POST_SHOW_FINISHED_MESSAGE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Run the script if it exists [yes/no]
 DOCKERMGR_ENABLE_INSTALL_SCRIPT="yes"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# enable cron jobs
+__init_cron() {
+  HOST_CRON_ENABLED="yes"
+  HOST_CRON_SCHEDULE="30 0 * * *"
+  HOST_CRON_COMMAND="curl -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_ENV\" \"http://$NGINX_PROXY_URL/v1/update\""
+  HOST_CRON_USER="root"
+}
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set custom container enviroment variables - [MYVAR="VAR"]
 __custom_docker_env() {
@@ -1873,6 +1875,7 @@ SET_EXECUTE_DOCKER_CMD="$(echo "docker run -d $DOCKER_GET_OPTIONS $DOCKER_GET_CU
 __container_import_variables "$CONTAINER_ENV_FILE_MOUNT"
 __dockermgr_variables >"$DOCKERMGR_CONFIG_DIR/env/$APPNAME.conf"
 __dockermgr_password_variables >"$DOCKERMGR_CONFIG_DIR/secure/$APPNAME"
+__init_cron
 chmod -f 600 "$DOCKERMGR_CONFIG_DIR/secure/$APPNAME"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ ! -f "$DOCKERMGR_CONFIG_DIR/env/$APPNAME.custom.conf" ]; then
