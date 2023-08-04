@@ -472,9 +472,13 @@ __init_cron() {
 __custom_docker_env() {
   cat <<EOF | tee | grep -v '^$'
 WATCHTOWER_HTTP_API_UPDATE=true
-WATCHTOWER_HTTP_API_TOKEN=$CONTAINER_USER_ADMIN_PASS_ENV
 WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
-
+WATCHTOWER_HTTP_API_TOKEN=$CONTAINER_USER_ADMIN_PASS_ENV
+WATCHTOWER_SCHEDULE=0 0 0 * * *
+WATCHTOWER_CLEANUP=true
+WATCHTOWER_TIMEOUT=30s
+WATCHTOWER_NOTIFICATIONS_LEVEL=info
+WATCHTOWER_NO_STARTUP_MESSAGE=false
 EOF
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2216,7 +2220,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     [ -n "$HOST_CRON_USER" ] || HOST_CRON_USER="root"
     [ -n "$HOST_CRON_SCHEDULE" ] || HOST_CRON_SCHEDULE="30 0 * * *"
     printf_cyan   "Setting schedule to:                      $HOST_CRON_SCHEDULE"
-    printf_cyan   "Setting command  to:                      $HOST_CRON_COMMAND"
+    printf_cyan   "Setting command  to:                      ${HOST_CRON_COMMAND:0:120}"
     printf_yellow "Applying cron job to:                     /etc/cron.d/$CONTAINER_NAME"
     echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND" | sudo tee "/etc/cron.d/$CONTAINER_NAME" &>/dev/null
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
