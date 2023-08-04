@@ -268,7 +268,7 @@ HOST_ETC_HOSTS_ENABLED="yes"
 HOST_ETC_HOSTS_INIT_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker socket - [yes/no] [/var/run/docker.sock]
-DOCKER_SOCKET_ENABLED="no"
+DOCKER_SOCKET_ENABLED="yes"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
