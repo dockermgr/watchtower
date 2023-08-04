@@ -1078,9 +1078,9 @@ fi
 # Mount the docker socket
 if [ "$DOCKER_SOCKET_ENABLED" = "yes" ]; then
   if [ -z "$DOCKER_SOCKET_MOUNT" ]; then
-    if [ -f "/var/run/docker.sock" ]; then
+    if [ -e "/var/run/docker.sock" ]; then
       DOCKER_SET_OPTIONS+=("--volume /var/run/docker.sock:/var/run/docker.sock")
-    elif [ -f "$DOCKER_SOCKET_MOUNT" ]; then
+    elif [ -e "$DOCKER_SOCKET_MOUNT" ]; then
       DOCKER_SET_OPTIONS+=("--volume $DOCKER_SOCKET_MOUNT:/var/run/docker.sock")
     fi
   fi
