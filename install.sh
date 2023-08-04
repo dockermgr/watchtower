@@ -463,9 +463,9 @@ DOCKERMGR_ENABLE_INSTALL_SCRIPT="yes"
 # enable cron jobs
 __init_cron() {
   HOST_CRON_ENABLED="yes"
-  HOST_CRON_SCHEDULE="30 0 * * *"
-  HOST_CRON_COMMAND="curl -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_ENV\" \"http://$NGINX_PROXY_URL/v1/update\""
   HOST_CRON_USER="root"
+  HOST_CRON_SCHEDULE="30 0 * * *"
+  HOST_CRON_COMMAND="curl -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_ENV\" \"$NGINX_PROXY_URL/v1/update\""
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set custom container enviroment variables - [MYVAR="VAR"]
@@ -2219,9 +2219,9 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
   if [ "$HOST_CRON_ENABLED" = "yes" ] && [ -n "$HOST_CRON_COMMAND" ] && [ -n "$NGINX_PROXY_URL" ]; then
     [ -n "$HOST_CRON_USER" ] || HOST_CRON_USER="root"
     [ -n "$HOST_CRON_SCHEDULE" ] || HOST_CRON_SCHEDULE="30 0 * * *"
+    printf_cyan   "Setting cron user to:                     $HOST_CRON_USER"
     printf_cyan   "Setting schedule to:                      $HOST_CRON_SCHEDULE"
-    printf_cyan   "Setting command  to:                      ${HOST_CRON_COMMAND:0:120}"
-    printf_yellow "Applying cron job to:                     /etc/cron.d/$CONTAINER_NAME"
+    printf_yellow "Saving cron job to:                       /etc/cron.d/$CONTAINER_NAME"
     echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND" | sudo tee "/etc/cron.d/$CONTAINER_NAME" &>/dev/null
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
  fi
