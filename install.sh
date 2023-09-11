@@ -2309,7 +2309,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     [ -n "$HOST_CRON_SCHEDULE" ] || HOST_CRON_SCHEDULE="30 0 * * *"
     __printf_spacing_color "6" "40" "Setting cron user to:" "$HOST_CRON_USER"
     __printf_spacing_color "6" "40" "Setting schedule to:" "$HOST_CRON_SCHEDULE"
-    __printf_spacing_color "3" "40" "Saving cron job to: /etc/cron.d/$CONTAINER_NAME"
+    __printf_spacing_color "3" "40" "Saving cron job to:" "/etc/cron.d/$CONTAINER_NAME"
     eval echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND" | sudo tee -p "/etc/cron.d/$CONTAINER_NAME" &>/dev/null
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
