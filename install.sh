@@ -295,9 +295,9 @@ DOCKER_SOCKET_ENABLED="yes"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
-DOCKER_CONFIG_ENABLED="no"
+DOCKER_CONFIG_ENABLED="yes"
 HOST_DOCKER_CONFIG=""
-CONTAINER_DOCKER_CONFIG_FILE=""
+CONTAINER_DOCKER_CONFIG_FILE="/config.json"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount soundcard - [yes/no] [/dev/snd] [/dev/snd]
 DOCKER_SOUND_ENABLED="no"
