@@ -158,7 +158,7 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-  printf_blue 'To use api: curl -q -LSsf -H "Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_HASH" $CONTAINER_WEB_SERVER_LISTEN_ON:$CONTAINER_WEB_SERVER_INT_PORT/v1/update'
+  printf_blue 'To use api: curl -q -LSsf -H "Authorization: Bearer '$CONTAINER_USER_ADMIN_PASS_HASH'" '$CONTAINER_WEB_SERVER_LISTEN_ON:$CONTAINER_WEB_SERVER_INT_PORT'/v1/update'
   return 0
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
