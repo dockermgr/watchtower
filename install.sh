@@ -1091,8 +1091,12 @@ if [ -n "$CONTAINER_SWAP_SIZE" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set CPU count
+GET_CPU_CORES="$(grep -sc ^processor /proc/cpuinfo || echo '1')"
+if [ -n "$CONTAINER_CPU_COUNT" ] && [ "$GET_CPU_CORES" -le "$CONTAINER_CPU_COUNT" ]; then
+  CONTAINER_CPU_COUNT="$GET_CPU_CORES"
+fi
 if [ -z "$CONTAINER_CPU_COUNT" ] && [ -f "/proc/cpuinfo" ]; then
-  CONTAINER_CPU_COUNT="$(grep -c '^processor' /proc/cpuinfo || echo '1')"
+  CONTAINER_CPU_COUNT="$(grep -sc '^processor' /proc/cpuinfo || echo '1')"
 fi
 if [ -n "$CONTAINER_CPU_COUNT" ]; then
   DOCKER_SET_OPTIONS+=("--cpus $CONTAINER_CPU_COUNT")
