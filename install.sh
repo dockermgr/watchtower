@@ -12,8 +12,8 @@
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
 # @@TODO             :  Completely rewrite/refactor/variable cleanup
-# @@Other            :  
-# @@Resource         :  
+# @@Other            :
+# @@Resource         :
 # @@Terminal App     :  no
 # @@sudo/root        :  no
 # @@Template         :  installers/dockermgr
@@ -491,7 +491,7 @@ CONTAINER_CREATE_DIRECTORY+=""
 HOST_CRON_ENABLED="yes"
 HOST_CRON_USER="root"
 HOST_CRON_SCHEDULE="30 */6 * * *"
-HOST_CRON_COMMAND='curl -q -LSsf -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_HASH\" \"$NGNIX_REVERSE_ADDRESS/v1/update\"'
+HOST_CRON_COMMAND='curl -q -LSsf -H \"Authorization: Bearer '$CONTAINER_USER_ADMIN_PASS_HASH'\" \"'$NGNIX_REVERSE_ADDRESS'/v1/update\"'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Containers default username/password
 CONTAINER_DEFAULT_USERNAME=""
@@ -1198,8 +1198,8 @@ if [ -n "$CONTAINER_USER_ADMIN_PASS_HASH" ]; then
     CONTAINER_USER_ADMIN_PASS_RAW="$(__password 32)"
     CONTAINER_USER_ADMIN_PASS_HASH="$(__hash_password $CONTAINER_USER_ADMIN_PASS_RAW)"
   fi
-    CONTAINER_USER_ADMIN_PASS_RAW="${CONTAINER_USER_ADMIN_PASS_RAW:-$CONTAINER_USER_ADMIN_PASS_HASH}"
-    CONTAINER_USER_ADMIN_PASS_HASH="${CONTAINER_USER_ADMIN_PASS_HASH:-$(__hash_password $CONTAINER_USER_ADMIN_PASS_RAW)}"
+  CONTAINER_USER_ADMIN_PASS_RAW="${CONTAINER_USER_ADMIN_PASS_RAW:-$CONTAINER_USER_ADMIN_PASS_HASH}"
+  CONTAINER_USER_ADMIN_PASS_HASH="${CONTAINER_USER_ADMIN_PASS_HASH:-$(__hash_password $CONTAINER_USER_ADMIN_PASS_RAW)}"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup display if enabled
