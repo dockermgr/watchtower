@@ -491,7 +491,7 @@ CONTAINER_CREATE_DIRECTORY+=""
 HOST_CRON_ENABLED="yes"
 HOST_CRON_USER="root"
 HOST_CRON_SCHEDULE="30 */6 * * *"
-HOST_CRON_COMMAND='curl -q -LSsf -H \"Authorization: Bearer '$CONTAINER_USER_ADMIN_PASS_HASH'\" \"'$NGNIX_REVERSE_ADDRESS'/v1/update\"'
+HOST_CRON_COMMAND='curl -q -LSsf -H \"Authorization: Bearer $CONTAINER_USER_ADMIN_PASS_HASH\" \"$NGNIX_REVERSE_ADDRESS/v1/update\"'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Containers default username/password
 CONTAINER_DEFAULT_USERNAME=""
