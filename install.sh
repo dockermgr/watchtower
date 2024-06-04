@@ -740,9 +740,10 @@ __test_public_reachable() {
 __create_docker_script() {
   [ -n "$EXECUTE_DOCKER_CMD" ] || return
   local replace_with="$HUB_IMAGE_URL:$HUB_IMAGE_TAG $CONTAINER_COMMANDS"
+  local EXECUTE_DOCKER_CMD="$(echo "$EXECUTE_DOCKER_CMD" | grep -v '^$' | sed 's/ --/\n  --/g;s| -d| -d \\|g' | grep -v '^$' | sed '/  --/ s/$/ \\/' | grep '^')"
   create_docker_script_message_pre="${create_docker_script_message_pre:-Failed to execute $EXECUTE_PRE_INSTALL}"
   create_docker_script_message_post="${create_docker_script_message_post:-Failed to create $CONTAINER_NAME}"
-  cat <<EOF | grep -v '^$' | sed 's/ --/\n  --/g;s| -d| -d \\|g' | grep -v '^$' | sed '/  --/ s/$/ \\/' | grep '^' | tee -p "$DOCKERMGR_INSTALL_SCRIPT" >/dev/null
+  cat <<EOF | tee -p "$DOCKERMGR_INSTALL_SCRIPT" >/dev/null
 #!/usr/bin/env bash
 # Install script for $CONTAINER_NAME
 statusCode=0
@@ -1941,6 +1942,7 @@ unset DOCKER_SET_PORTS_ENV_TMP ENV_PORTS SET_PORTS_ENV_TMP
 DOCKER_CUSTOM_ARRAY="$(__retrieve_custom_env | __custom_docker_clean_env)"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Clean up variables
+[ -n "$CONTAINER_COMMANDS" ] && CONTAINER_COMMANDS="$(echo "$CONTAINER_COMMANDS" | tr '\n' ' ')" || CONTAINER_COMMANDS="   "
 DOCKER_SET_PUBLISH="$(printf '%s\n' "${DOCKER_SET_TMP_PUBLISH[@]}" | sort -Vu | tr '\n' ' ')" # ensure only one
 HUB_IMAGE_URL="$(__trim "${HUB_IMAGE_URL[*]:-}")"                                             # image url
 HUB_IMAGE_TAG="$(__trim "${HUB_IMAGE_TAG[*]:-}")"                                             # image tag
@@ -1956,7 +1958,6 @@ DOCKER_GET_OPTIONS="$(__trim "${DOCKER_SET_OPTIONS[*]:-}")"                     
 DOCKER_GET_CUSTOM="$(__trim "${DOCKER_CUSTOM_ARRAY[*]:-}")"                                   # --tty --rm --interactive
 DOCKER_GET_PUBLISH="$(__trim "${DOCKER_SET_PUBLISH[*]:-}")"                                   # --publish ports
 CONTAINER_COMMANDS="$(__trim "${CONTAINER_COMMANDS[*]:-}")"                                   # pass command to container
-[ -n "$CONTAINER_COMMANDS" ] || CONTAINER_COMMANDS="    "
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # set docker commands - script creation - execute command #
 SET_EXECUTE_PRE_INSTALL="$(echo "docker stop $CONTAINER_NAME &>/dev/null;docker rm -f $CONTAINER_NAME &>/dev/null;docker pull -q $HUB_IMAGE_URL:$HUB_IMAGE_TAG")"
