@@ -543,10 +543,10 @@ CONTAINER_CREATE_DIRECTORY="/data/$APPNAME,/data/logs/$APPNAME,/config/$APPNAME 
 CONTAINER_CREATE_DIRECTORY+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable cron jobs
-HOST_CRON_ENABLED=""
+HOST_CRON_ENABLED="yes"
 HOST_CRON_USER="root"
-HOST_CRON_SCHEDULE=""
-HOST_CRON_COMMAND=""
+HOST_CRON_SCHEDULE="30 */6 * * *"
+HOST_CRON_COMMAND='curl -q -LSsf -H "Authorization: Bearer '${CONTAINER_API_KEY_TOKEN}'" "'$NGINX_PROXY_URL'/v1/update"'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable the health check - creates a cron script - [yes/no] [/health]
 HOST_SERVER_HEALTH_CHECK_ENABLED=""
@@ -2506,6 +2506,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
   if [ "$HOST_CRON_ENABLED" = "yes" ] && [ -n "$HOST_CRON_COMMAND" ]; then
     [ -n "$HOST_CRON_USER" ] || HOST_CRON_USER="root"
     [ -n "$HOST_CRON_SCHEDULE" ] || HOST_CRON_SCHEDULE="30 0 * * *"
+    HOST_CRON_COMMAND="$(eval echo $HOST_CRON_COMMAND)"
     __printf_spacing_color "6" "Setting cron user to:" "$HOST_CRON_USER"
     __printf_spacing_color "6" "Setting schedule to:" "$HOST_CRON_SCHEDULE"
     __printf_spacing_color "3" "Saving cron job to: /etc/cron.d/${CONTAINER_NAME}_cron"
