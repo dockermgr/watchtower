@@ -388,8 +388,8 @@ HOST_NGINX_INTERNAL_HOST=""
 HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
-CONTAINER_WEB_SERVER_ENABLED="no"
-CONTAINER_WEB_SERVER_INT_PORT="80"
+CONTAINER_WEB_SERVER_ENABLED="yes"
+CONTAINER_WEB_SERVER_INT_PORT="8080"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
@@ -547,7 +547,7 @@ __setup_cron() {
   HOST_CRON_ENABLED="yes"
   HOST_CRON_USER="root"
   HOST_CRON_SCHEDULE="30 */6 * * *"
-  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_SERVER_TEST_URL/v1/update\" >/dev/null 2>&1"
+  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_WEB_SERVER_LISTEN_ON:$CONTAINER_WEB_SERVER_INT_PORT/v1/update\" >/dev/null 2>&1"
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable the health check - creates a cron script - [yes/no] [/health]
@@ -1443,6 +1443,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 [ -z "$CONTAINER_PROTOCOL" ] || DOCKER_SET_OPTIONS_ENV+=("--env CONTAINER_PROTOCOL=$CONTAINER_PROTOCOL")
 [ -z "$CONTAINER_WEB_SERVER_PROTOCOL" ] || DOCKER_SET_OPTIONS_ENV+=("--env CONTAINER_WEB_SERVER_PROTOCOL=$CONTAINER_WEB_SERVER_PROTOCOL")
+[ -n "$NGNIX_REVERSE_ADDRESS" ] || NGNIX_REVERSE_ADDRESS="$CONTAINER_WEB_SERVER_PROTOCOL://$CONTAINER_WEB_SERVER_LISTEN_ON:$CONTAINER_WEB_SERVER_INT_PORT"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup easy port settings
 if [ "$CONTAINER_SERVICE_PUBLIC" = "yes" ] || [ "$CONTAINER_SERVICE_PUBLIC" = "0.0.0.0" ]; then
@@ -2400,7 +2401,6 @@ if [ "$NINGX_VHOSTS_WRITABLE" = "true" ]; then
   else
     NGINX_PROXY_URL=""
   fi
-  [ -n "$NGINX_PROXY_URL" ] && NGNIX_REVERSE_ADDRESS="$NGINX_PROXY_URL"
   [ -f "$NGINX_MAIN_CONFIG" ] && NGINX_PROXY_URL="$CONTAINER_WEB_SERVER_PROTOCOL://$CONTAINER_HOSTNAME"
 fi
 NGNIX_REVERSE_ADDRESS="${CONTAINER_NGINX_PROXY_URL:-$NGNIX_REVERSE_ADDRESS}"
