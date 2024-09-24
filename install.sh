@@ -546,7 +546,7 @@ CONTAINER_CREATE_DIRECTORY+=""
 HOST_CRON_ENABLED="yes"
 HOST_CRON_USER="root"
 HOST_CRON_SCHEDULE="30 */6 * * *"
-HOST_CRON_COMMAND='curl -q -LSsf -H "Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}" "$NGNIX_REVERSE_ADDRESS/v1/update" >/dev/null 2>&1'
+HOST_CRON_COMMAND='curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$NGNIX_REVERSE_ADDRESS/v1/update\" >/dev/null 2>&1'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable the health check - creates a cron script - [yes/no] [/health]
 HOST_SERVER_HEALTH_CHECK_ENABLED=""
