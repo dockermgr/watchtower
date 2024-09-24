@@ -2053,7 +2053,7 @@ if [ -n "$CONTAINER_PUBLISHED_PORT" ]; then
     publish_temp+=("--publish $publish_port ")
   done
   DOCKER_SET_TMP_PUBLISH=("${publish_temp[*]}")
-  unset CONTAINER_ADD_RANDOM_PORTS CONTAINER_WEB_SERVER_INT_PORT publish_port publish_temp
+  unset CONTAINER_ADD_RANDOM_PORTS publish_port publish_temp
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Fix/create port
