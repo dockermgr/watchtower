@@ -542,14 +542,6 @@ CONTAINER_DEBUG_OPTIONS=""
 CONTAINER_CREATE_DIRECTORY="/data/$APPNAME,/data/logs/$APPNAME,/config/$APPNAME "
 CONTAINER_CREATE_DIRECTORY+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# enable cron jobs
-__setup_cron() {
-  HOST_CRON_ENABLED="yes"
-  HOST_CRON_USER="root"
-  HOST_CRON_SCHEDULE="30 */6 * * *"
-  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_WEB_SERVER_LISTEN_ON:$CONTAINER_WEB_SERVER_INT_PORT/v1/update\" >/dev/null 2>&1"
-}
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable the health check - creates a cron script - [yes/no] [/health]
 HOST_SERVER_HEALTH_CHECK_ENABLED=""
 HOST_SERVER_HEALTH_CHECK_SERVER_URI=""
@@ -566,6 +558,14 @@ DOCKERMGR_ENABLE_INSTALL_SCRIPT="yes"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Init only - This should be no [yes/no]
 INIT_SCRIPT_ONLY="no"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# enable cron jobs
+__setup_cron() {
+  HOST_CRON_ENABLED="yes"
+  HOST_CRON_USER="root"
+  HOST_CRON_SCHEDULE="30 */6 * * *"
+  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_WEB_SERVER_LISTEN_ON:$CONTAINER_WEB_SERVER_INT_PORT/v1/update\" >/dev/null 2>&1"
+}
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set custom container enviroment variables - [MYVAR="VAR"]
 __custom_docker_env() {
@@ -1285,8 +1285,8 @@ if [ -n "$CONTAINER_USER_ADMIN_PASS_HASH" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -n "$CONTAINER_API_KEY_NAME" ]; then
-  if [ -z "$ENV_CONTAINER_API_KEY_TOKEN" ] || [ "$ENV_CONTAINER_API_KEY_TOKEN" = "random" ]; then
-    ENV_CONTAINER_API_KEY_TOKEN="$(__random_api_keys 1 48 1)"
+  if [ -z "$CONTAINER_API_KEY_TOKEN" ] || [ "$CONTAINER_API_KEY_TOKEN" = "random" ]; then
+    CONTAINER_API_KEY_TOKEN="$(__random_api_keys 1 48 1)"
   fi
   DOCKER_SET_OPTIONS_ENV+=("--env $CONTAINER_API_KEY_NAME=${CONTAINER_API_KEY_TOKEN}")
 fi
