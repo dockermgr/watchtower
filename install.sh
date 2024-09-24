@@ -202,7 +202,7 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-
+  __printf_spacing_color 40 98 "To update Containers run:" "$HOST_CRON_COMMAND"
   return 0
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
