@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202409251347-git
+##@Version           :  202409251607-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Wednesday, Sep 25, 2024 13:47 EDT
+# @@Created          :  Wednesday, Sep 25, 2024 16:07 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="watchtower"
-VERSION="202409251347-git"
+VERSION="202409251607-git"
 REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${RUN_USER:-$USER}"
@@ -108,12 +108,10 @@ __sudo_exec() { [ "$DOCKERMGR_USER_CAN_SUDO" = "true" ] && sudo -HE "$@" || { [ 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # printf_space spacing color message value
 __printf_space() {
-  local padlength="" color="" pad="" padlimit="" spacing=""
+  local color padlength
   test -n "$1" && test -z "${1//[0-9]/}" && color="$1" && shift 1 || color="7"
   test -n "$1" && test -z "${1//[0-9]/}" && padlength="$1" && shift 1 || padlength="40"
-  printf '%b' "$(tput setaf "$color" 2>/dev/null)"
-  printf '%s%s%s' "$1" "$padding" "$2"
-  printf '%b' "$(tput sgr0 2>/dev/null)"
+  printf '%b%s   %s%b' "$(tput setaf "$color" 2>/dev/null)" "$1" "$2" "$(tput sgr0 2>/dev/null)"
   printf '\n'
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -346,7 +344,7 @@ CONTAINER_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set container hostname and domain - Default: [$APPNAME.$SET_HOST_FULL_NAME] [$SET_HOST_FULL_DOMAIN] or [hostname]
 CONTAINER_HOSTNAME="hostname"
-CONTAINER_DOMAINNAME="hostname"
+CONTAINER_DOMAINNAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the network type - default is bridge - [bridge/host]
 HOST_DOCKER_NETWORK="bridge"
@@ -563,7 +561,7 @@ INIT_SCRIPT_ONLY="no"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable cron jobs [yes/no] [user] [command_to_execute] [[0-59] [0-23] [0-6] [1-31] [1-12] [file] or [@hourly/@daily/@monthly/@yearly]]
 __setup_cron() {
-  HOST_CRON_ENABLED="no"
+  HOST_CRON_ENABLED="yes"
   HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_NGINX_PROXY_URL/v1/update\""
   HOST_CRON_USER="root"
   HOST_CRON_MIN='30'
@@ -985,7 +983,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ "$CONTAINER_HOSTNAME" = "hostname" ] || [ "$CONTAINER_DOMAINNAME" = "hostname" ]; then
   CONTAINER_HOSTNAME="$(hostname -s)"
-  CONTAINER_DOMAINNAME="${CONTAINER_HOSTNAME//$HOSTNAME./}"
+  CONTAINER_DOMAINNAME="${HOSTNAME//$CONTAINER_HOSTNAME./}"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -z "$CONTAINER_HOSTNAME" ]; then
