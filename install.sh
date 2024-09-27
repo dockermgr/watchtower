@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202409251607-git
+##@Version           :  202409271558-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Wednesday, Sep 25, 2024 16:07 EDT
+# @@Created          :  Friday, Sep 27, 2024 15:58 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="watchtower"
-VERSION="202409251607-git"
+VERSION="202409271558-git"
 REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${RUN_USER:-$USER}"
@@ -65,16 +65,16 @@ fi
 # Make sure the scripts repo is installed
 scripts_check
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# docker registry settings
-export DOCKER_REGISTRY_ORG_REPO="$APPNAME"
-export DOCKER_REGISTRY_ORG_NAME="casjaysdevdocker"
-export DOCKER_REGISTRY_URL="docker.io"
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# URL to container image - docker pull - [URL]
-export DOCKER_HUB_IMAGE_URL="$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_ORG_NAME/$DOCKER_REGISTRY_ORG_REPO"
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # image tag - [docker pull DOCKER_HUB_IMAGE_URL:tag]
 export DOCKER_HUB_IMAGE_TAG="latest"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# docker registry settings
+export DOCKER_REGISTRY_URL="${DOCKER_REGISTRY_URL:-docker.io}"
+export DOCKER_REGISTRY_ORG_REPO="${DOCKER_REGISTRY_ORG_REPO:-$APPNAME}"
+export DOCKER_REGISTRY_ORG_USER="${DOCKER_REGISTRY_ORG_USER:-casjaysdevdocker}"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# URL to container image - docker pull - [URL]
+export DOCKER_HUB_IMAGE_URL="$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_ORG_USER/$DOCKER_REGISTRY_ORG_REPO"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Repository variables
 export REPO="${DOCKERMGRREPO:-https://github.com/$SCRIPTS_PREFIX}/$APPNAME"
@@ -84,11 +84,13 @@ export APPVERSION="$(__appversion "$REPO/raw/$REPO_BRANCH/version.txt")"
 export INSTDIR="$HOME/.local/share/CasjaysDev/$SCRIPTS_PREFIX/$APPNAME"
 export DOCKERMGR_CONFIG_DIR="${DOCKERMGR_CONFIG_DIR:-$HOME/.config/myscripts/$SCRIPTS_PREFIX}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Set default docker home for containers
-export APPDIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_NAME/$DOCKER_REGISTRY_ORG_REPO"
+SET_CONTAINER_NAME="${DOCKER_REGISTRY_ORG_USER}=${DOCKER_REGISTRY_ORG_REPO}-${DOCKER_HUB_IMAGE_TAG}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Set the mountpoint directory - Defaults to $APPDIR/$APPNAME/rootfs
-export DATADIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_NAME/$DOCKER_REGISTRY_ORG_REPO/rootfs"
+# Set default docker home for containers - $SET_APPDIR/$CONTAINER_NAME [APPDIR]
+SET_APPDIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_USER/$DOCKER_REGISTRY_ORG_REPO"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Set the base data directory - mounted files live in $SET_DATADIR/$CONTAINER_NAME/rootfs [DATADIR]
+SET_DATADIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_USER/$DOCKER_REGISTRY_ORG_REPO/"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Call the main function
 dockermgr_install
@@ -128,7 +130,7 @@ __docker_ps_all() { docker ps -a 2>&1 | grep -i ${1:-} "$CONTAINER_NAME" && retu
 __password() { head -n1000 -c 10000 "/dev/urandom" | tr -dc '0-9a-zA-Z' | head -c${1:-16} && echo ""; }
 __total_memory() { mem="$(free | grep -i 'mem: ' | awk -F ' ' '{print $2}')" && echo $((mem / 1000)); }
 __docker_is_running() { ps aux 2>/dev/null | grep 'dockerd' | grep -v ' grep ' | grep -q '^' || return 1; }
-__container_name() { echo "$DOCKER_REGISTRY_ORG_NAME-$DOCKER_REGISTRY_ORG_REPO-$DOCKER_HUB_IMAGE_TAG" | sed 's|/|-|g' | grep '^' || return 1; }
+__container_name() { echo "$DOCKER_REGISTRY_ORG_USER-$DOCKER_REGISTRY_ORG_REPO-$DOCKER_HUB_IMAGE_TAG" | sed 's|/|-|g' | grep '^' || return 1; }
 __is_server() { echo "${SET_HOST_FULL_NAME:-$HOSTNAME}" | grep -q '^server\..*\..*[a-zA-Z0-9][a-zA-Z0-9]$' || return 1; }
 __host_name() { hostname -f 2>/dev/null | grep -F '.' | grep '^' || hostname -f 2>/dev/null | grep '^' || echo "$HOSTNAME"; }
 __container_is_running() { docker ps 2>&1 | grep -i "$CONTAINER_NAME" | grep -qi 'ago.* Up.* [0-9].* ' && return 0 || return 1; }
@@ -309,7 +311,7 @@ HOST_ETC_HOSTS_INIT_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker socket - [yes/no] [/var/run/docker.sock] [yes/no]
 DOCKER_SOCKET_ENABLED="yes"
-DOCKER_SOCKER_READONLY="yes"
+DOCKER_SOCKER_READONLY="no"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Will set --env-file "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.env" to docker run [yes/no]
@@ -339,12 +341,12 @@ HOST_SYS_MOUNT_ENABLED="no"
 HOST_PROC_MOUNT_ENABLED="no"
 HOST_MODULES_MOUNT_ENABLED="no"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Set Container name - Default $DOCKER_REGISTRY_ORG_NAME=$APPNAME-$DOCKER_HUB_IMAGE_TAG
+# Set Container name - Default $DOCKER_REGISTRY_ORG_USER=$APPNAME-$DOCKER_HUB_IMAGE_TAG
 CONTAINER_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set container hostname and domain - Default: [$APPNAME.$SET_HOST_FULL_NAME] [$SET_HOST_FULL_DOMAIN] or [hostname]
-CONTAINER_HOSTNAME="hostname"
-CONTAINER_DOMAINNAME=""
+CONTAINER_HOSTNAME=""
+CONTAINER_DOMAINNAME="hostname"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the network type - default is bridge - [bridge/host]
 HOST_DOCKER_NETWORK="bridge"
@@ -800,13 +802,14 @@ __create_uninstall() {
   NGINX_FILES="$(echo "$NGINX_CONF_FILE $NGINX_INC_CONFIG $NGINX_VHOST_CONFIG $NGINX_INTERNAL_IS_SET" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ')"
   mkdir -p "$DOCKERMGR_CONFIG_DIR/uninstall"
   cat <<EOF >"$DOCKERMGR_CONFIG_DIR/uninstall/$APPNAME"
-APPDIR="$APPDIR"
 INSTDIR="$INSTDIR"
-DATADIR="${DATADIR//\/rootfs/}"
+APPDIR="$APPDIR"
+DATADIR="$DATADIR"
+ROOTFS_DIR="$ROOTFS_DIR"
 DOCKERMGR_CONFIG_DIR="$DOCKERMGR_CONFIG_DIR"
 CONTAINER_NAME="$CONTAINER_NAME"
 DOCKER_NAME="$CONTAINER_NAME"
-DOCKER_REGISTRY_ORG_NAME="$DOCKER_REGISTRY_ORG_NAME"
+DOCKER_REGISTRY_ORG_USER="$DOCKER_REGISTRY_ORG_USER"
 DOCKER_REGISTRY_ORG_REPO="$DOCKER_REGISTRY_ORG_REPO"
 DOCKER_REGISTRY_URL="$DOCKER_REGISTRY_URL"
 ADD_REMOVE_FILES="$DOCKERMGR_CONFIG_DIR/*/$CONTAINER_NAME*"
@@ -908,18 +911,14 @@ DOCKER_HUB_IMAGE_URL="${DOCKER_HUB_IMAGE_URL//*:\/\//}"
 DOCKER_HUB_IMAGE_URL="${DOCKER_HUB_IMAGE_URL//:*/}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set containers name
-if [ -z "$CONTAINER_NAME" ]; then
-  if [ "$DOCKER_REGISTRY_ORG_REPO" = "$APPNAME" ]; then
-    CONTAINER_NAME="$(echo "$DOCKER_REGISTRY_ORG_NAME-$DOCKER_REGISTRY_ORG_REPO-$DOCKER_HUB_IMAGE_TAG")"
-  else
-    CONTAINER_NAME="$(echo "$DOCKER_REGISTRY_ORG_NAME-$APPNAME-$DOCKER_HUB_IMAGE_TAG")"
-  fi
-fi
-CONTAINER_NAME="${CONTAINER_NAME:-$(__container_name || echo "$DOCKER_REGISTRY_ORG_NAME-$DOCKER_REGISTRY_ORG_REPO-$DOCKER_HUB_IMAGE_TAG")}"
+CONTAINER_NAME="${CONTAINER_NAME:-$SET_CONTAINER_NAME}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define folders
-HOST_DATA_DIR="$DATADIR/data"
-HOST_CONFIG_DIR="$DATADIR/config"
+APPDIR="$SET_APPDIR/$CONTAINER_NAME"
+DATADIR="$SET_DATADIR/$CONTAINER_NAME"
+HOST_ROOTFS_DIR="$DATADIR/rootfs"
+HOST_DATA_DIR="$HOST_ROOTFS_DIR/data"
+HOST_CONFIG_DIR="$HOST_ROOTFS_DIR/config"
 LOCAL_DATA_DIR="${LOCAL_DATA_DIR:-$HOST_DATA_DIR}"
 LOCAL_CONFIG_DIR="${LOCAL_CONFIG_DIR:-$HOST_CONFIG_DIR}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2262,7 +2261,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Main progam
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-[ -d "$APPDIR/files" ] && { [ ! -d "$DATADIR" ] && mv -f "$APPDIR/files" "$DATADIR"; }
+[ -d "$APPDIR/files" ] && { [ ! -d "$HOST_ROOTFS_DIR" ] && mv -f "$APPDIR/files" "$HOST_ROOTFS_DIR"; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Clone/update the repo
 if __am_i_online; then
@@ -2284,14 +2283,17 @@ echo "$CONTAINER_NAME" >"$DOCKERMGR_CONFIG_DIR/installed/$APPNAME"
 if [ ! -d "$DATADIR" ]; then
   mkdir -p "$DATADIR"
   chmod -f 777 "$DATADIR"
+  chown -Rf $USER:$USER "$DATADIR"
 fi
 if [ ! -d "$LOCAL_DATA_DIR" ]; then
   mkdir -p "$LOCAL_DATA_DIR"
   chmod -f 777 "$LOCAL_DATA_DIR"
+  chown -Rf $USER:$USER "$LOCAL_DATA_DIR"
 fi
 if [ ! -d "$LOCAL_CONFIG_DIR" ]; then
   mkdir -p "$LOCAL_CONFIG_DIR"
   chmod -f 777 "$LOCAL_CONFIG_DIR"
+  chown -Rf $USER:$USER "$LOCAL_CONFIG_DIR"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 CONTAINER_CREATE_DIRECTORY="${CONTAINER_CREATE_DIRECTORY//,/ }"
@@ -2299,18 +2301,19 @@ CONTAINER_CREATE_DIRECTORY="$(__trim "$CONTAINER_CREATE_DIRECTORY")"
 if [ -n "$CONTAINER_CREATE_DIRECTORY" ]; then
   CONTAINER_CREATE_DIRECTORY="${CONTAINER_CREATE_DIRECTORY//, /}"
   for dir in $CONTAINER_CREATE_DIRECTORY; do
-    if [ -n "$dir" ] && [ ! -d "$DATADIR/$dir" ]; then
-      mkdir -p "$DATADIR/$dir"
-      chmod -f 777 "$DATADIR/$dir"
+    if [ -n "$dir" ] && [ ! -d "$HOST_ROOTFS_DIR/$dir" ]; then
+      mkdir -p "$HOST_ROOTFS_DIR/$dir"
+      chmod -f 777 "$HOST_ROOTFS_DIR/$dir"
+      chown -Rf $USER:$USER "$HOST_ROOTFS_DIR/$dir"
     fi
   done
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Copy over data files - keep the same stucture as -v DATADIR/mnt:/mnt
+# Copy over data files - keep the same stucture as -v HOST_ROOTFS_DIR/mnt:/mnt
 INSTALLED_FILE_NAME="$APPDIR/.installed"
 if [ -d "$INSTDIR/rootfs" ] && [ ! -f "$INSTALLED_FILE_NAME" ]; then
-  __printf_color "3" "Copying files to $DATADIR"
-  __sudo_exec cp -Rf "$INSTDIR/rootfs/." "$DATADIR/" &>/dev/null
+  __printf_color "3" "Copying files to $HOST_ROOTFS_DIR"
+  __sudo_exec rsync -avhP "$INSTDIR/rootfs/." "$HOST_ROOTFS_DIR/" &>/dev/null
   find "$DATADIR" -name ".gitkeep" -type f -exec rm -rf {} \; &>/dev/null
 fi
 if [ -f "$INSTALLED_FILE_NAME" ]; then
@@ -2360,7 +2363,7 @@ EXECUTE_PRE_INSTALL="$(__trim "${SET_EXECUTE_PRE_INSTALL[*]}")"
 DOCKER_COMPOSE_CMD="$(docker compose 2>&1 | grep -q 'is not a docker command.' || echo "true")"
 if [ -f "$INSTDIR/docker-compose.yml" ] && [ "$DOCKER_COMPOSE_CMD" = "true" ]; then
   __printf_color "3" "Installing containers using docker-compose"
-  sed -i 's|REPLACE_DATADIR|'$DATADIR'' "$INSTDIR/docker-compose.yml" &>/dev/null
+  sed -i 's|REPLACE_DATADIR|'$HOST_ROOTFS_DIR'' "$INSTDIR/docker-compose.yml" &>/dev/null
   if cd "$INSTDIR"; then
     docker compose pull &>/dev/null
     docker compose up -d &>/dev/null
@@ -2372,7 +2375,7 @@ if [ -f "$INSTDIR/docker-compose.yml" ] && [ "$DOCKER_COMPOSE_CMD" = "true" ]; t
   fi
 elif [ -f "$INSTDIR/docker-compose.yml" ] && [ -n "$(type -P docker-compose)" ]; then
   __printf_color "3" "Installing containers using docker-compose"
-  sed -i 's|REPLACE_DATADIR|'$DATADIR'' "$INSTDIR/docker-compose.yml" &>/dev/null
+  sed -i 's|REPLACE_DATADIR|'$HOST_ROOTFS_DIR'' "$INSTDIR/docker-compose.yml" &>/dev/null
   if cd "$INSTDIR"; then
     docker-compose pull &>/dev/null
     docker-compose up -d &>/dev/null
@@ -2616,7 +2619,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     unset show_hosts_message_banner
   fi
   __printf_spacing_color "3" "The container name is:" "$CONTAINER_NAME"
-  __printf_spacing_color "3" "Containers data is saved in:" "$DATADIR"
+  __printf_spacing_color "3" "Containers data is saved in:" "$HOST_ROOTFS_DIR"
   __printf_spacing_color "3" "The container is listening on:" "$HOST_LISTEN_ADDR"
   __printf_spacing_color "3" "The domain name is set to:" "$CONTAINER_DOMAINNAME"
   __printf_spacing_color "3" "The hostname name is set to:" "$CONTAINER_HOSTNAME"
@@ -2750,7 +2753,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     fi
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
-  if [ -f "$DATADIR/config/auth/htpasswd" ]; then
+  if [ -f "$HOST_ROOTFS_DIR/config/auth/htpasswd" ]; then
     MESSAGE="true"
     __printf_spacing_color "5" "Username:" "root"
     __printf_spacing_color "5" "Password:" "${SET_USER_PASS:-toor}"
