@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202409271558-git
+##@Version           :  202409271656-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Friday, Sep 27, 2024 15:58 EDT
+# @@Created          :  Friday, Sep 27, 2024 16:56 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 APPNAME="watchtower"
-VERSION="202409271558-git"
+VERSION="202409271656-git"
 REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 USER="${SUDO_USER:-$USER}"
 RUN_USER="${RUN_USER:-$USER}"
@@ -90,7 +90,7 @@ export DOCKERMGR_CONFIG_DIR="${DOCKERMGR_CONFIG_DIR:-$HOME/.config/myscripts/$SC
 SET_APPDIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_USER/$DOCKER_REGISTRY_ORG_REPO"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the base data directory - mounted files live in $SET_DATADIR/$CONTAINER_NAME/rootfs [DATADIR]
-SET_DATADIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_USER/$DOCKER_REGISTRY_ORG_REPO/"
+SET_DATADIR="/var/lib/srv/$USER/docker/$DOCKER_REGISTRY_ORG_USER/$DOCKER_REGISTRY_ORG_REPO"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Call the main function
 dockermgr_install
@@ -1398,14 +1398,18 @@ if [ -n "$CONTAINER_USER_ADMIN_HASH_PASS" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -n "$CONTAINER_API_KEY_NAME" ]; then
-  if [ -z "$ENV_CONTAINER_API_KEY_TOKEN" ] || [ "$ENV_CONTAINER_API_KEY_TOKEN" = "random" ]; then
+  if [ "$ENV_CONTAINER_API_KEY_TOKEN" = "random" ]; then
+    ENV_CONTAINER_API_KEY_TOKEN="$(__create_api_key 48)"
+  elif [ -z "$ENV_CONTAINER_API_KEY_TOKEN" ]; then
     ENV_CONTAINER_API_KEY_TOKEN="$(__create_api_key 48)"
   fi
   DOCKER_SET_OPTIONS_ENV+=("--env $CONTAINER_API_KEY_NAME=${CONTAINER_API_KEY_TOKEN}")
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -n "$CONTAINER_SECRET_KEY_NAME" ]; then
-  if [ -z "$CONTAINER_SECRET_KEY_TOKEN" ] || [ "$CONTAINER_SECRET_KEY_TOKEN" = "random" ]; then
+  if [ "$CONTAINER_SECRET_KEY_TOKEN" = "random" ]; then
+    CONTAINER_SECRET_KEY_TOKEN="$(__create_secret_key 64)"
+  elif [ -z "$CONTAINER_SECRET_KEY_TOKEN" ]; then
     CONTAINER_SECRET_KEY_TOKEN="$(__create_secret_key 64)"
   fi
   DOCKER_SET_OPTIONS_ENV+=("--env $CONTAINER_SECRET_KEY_NAME=${CONTAINER_SECRET_KEY_TOKEN}")
@@ -2387,7 +2391,7 @@ elif [ -f "$INSTDIR/docker-compose.yml" ] && [ -n "$(type -P docker-compose)" ];
   fi
 fi
 if [ -x "$DOCKERMGR_INSTALL_SCRIPT" ]; then
-  printf_cyan "Reinstalling container: $CONTAINER_NAME"
+  printf_cyan "76: $CONTAINER_NAME"
   eval "$DOCKERMGR_INSTALL_SCRIPT" 2>"${TMP:-/tmp}/$APPNAME.err.log" >/dev/null
   __container_is_running && exitCode=0 || exitCode=1
   if [ $exitCode = 0 ]; then
