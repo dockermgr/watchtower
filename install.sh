@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011146-git
+##@Version           :  202410011155-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 11:46 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 11:55 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011146-git"
+export VERSION="202410011155-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -219,7 +219,7 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-  __printf_spacing_color "147" "To manually update run: $HOST_CRON_COMMAND"
+  __printf_spacing_color "To manually update run: $HOST_CRON_COMMAND"
 
   return 0
 }
@@ -372,7 +372,7 @@ CONTAINER_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set container hostname and domain - Default: [$APPNAME.$SET_HOST_FULL_NAME] [$SET_HOST_FULL_DOMAIN] or [hostname]
 CONTAINER_HOSTNAME=""
-CONTAINER_DOMAINNAME=""
+CONTAINER_DOMAINNAME="hostname"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the network type - default is bridge - [bridge/host]
 HOST_DOCKER_NETWORK="bridge"
@@ -408,7 +408,7 @@ HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
 CONTAINER_WEB_SERVER_ENABLED="no"
-CONTAINER_WEB_SERVER_INT_PORT="80"
+CONTAINER_WEB_SERVER_INT_PORT="8080"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
@@ -430,7 +430,7 @@ CONTAINER_ADD_RANDOM_PORTS=""
 CONTAINER_ADD_CUSTOM_PORT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Create a single port mapping [listen]:[externalPort/random]:[internalPort]
-CONTAINER_ADD_CUSTOM_SINGLE="$CONTAINER_WEB_SERVER_LISTEN_ON:random:$CONTAINER_WEB_SERVER_INT_PORT"
+CONTAINER_ADD_CUSTOM_SINGLE="$CONTAINER_WEB_SERVER_LISTEN_ON:random:$CONTAINER_WEB_SERVER_INT_PORT/tcp"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
@@ -593,7 +593,7 @@ INIT_SCRIPT_ONLY="no"
 # enable cron jobs [yes/no] [user] [command_to_execute] [[0-59] [0-23] [0-6] [1-31] [1-12] [file] or [@hourly/@daily/@monthly/@yearly]]
 __setup_cron() {
   HOST_CRON_ENABLED="yes"
-  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"http://$CONTAINER_ADD_CUSTOM_SINGLE/v1/update\""
+  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"http://${CONTAINER_ADD_CUSTOM_SINGLE//\/*/}/v1/update\""
   HOST_CRON_USER="root"
   HOST_CRON_MIN='30'
   HOST_CRON_HOUR='*/6'
@@ -1772,6 +1772,9 @@ if [ "$CONTAINER_IS_TIME_SERVER" = "yes" ]; then
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
+  if echo "$CONTAINER_ADD_CUSTOM_SINGLE" | grep -q ":random:"; then
+    CONTAINER_ADD_CUSTOM_SINGLE="${CONTAINER_ADD_CUSTOM_SINGLE//:random:/:$(__rport):}"
+  fi
   DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_ADD_CUSTOM_SINGLE")
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2139,10 +2142,6 @@ if [ -n "$CONTAINER_LABELS" ]; then
     fi
   done
   unset label
-fi
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
-  CONTAINER_ADD_CUSTOM_SINGLE="${CONTAINER_ADD_CUSTOM_SINGLE//:random:/:(__rport):}"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup custom port mappings
