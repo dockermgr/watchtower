@@ -196,7 +196,7 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-
+  __printf_spacing_color "To manually update run: $HOST_CRON_COMMAND"
   return 0
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -573,7 +573,7 @@ __setup_cron() {
   HOST_CRON_WEEK_DAY='*'
   HOST_CRON_MONTH_DAY='*'
   HOST_CRON_MONTH_NAME='*'
-  HOST_CRON_LOG_FILE="/dev/null"
+  HOST_CRON_LOG_FILE="/dev/null 2>&1"
   # [@hourly/@daily/@monthly/@yearly]
   HOST_CRON_AT_SCHEDULE=''
   # NO NEED TO CHANGE
@@ -2781,7 +2781,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     __printf_spacing_color "6" "Setting cron user to:" "$HOST_CRON_USER"
     __printf_spacing_color "6" "Setting schedule to:" "$HOST_CRON_SCHEDULE"
     __printf_spacing_color "3" "Saving cron job to: /etc/cron.d/${CONTAINER_NAME}_cron"
-    echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND >$HOST_CRON_LOG_FILE 2>&1" | sudo tee -p "/etc/cron.d/${CONTAINER_NAME}_cron" &>/dev/null
+    echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND >$HOST_CRON_LOG_FILE" | sudo tee -p "/etc/cron.d/${CONTAINER_NAME}_cron" &>/dev/null
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if __ssl_certs; then
