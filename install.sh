@@ -561,8 +561,8 @@ CONTAINER_LABELS=""
 CONTAINER_LABELS+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Specify container arguments - will run in container - [/path/to/script]
-CONTAINER_COMMANDS="--debug --http-api-update --http-api-metrics --rolling-restart "
-CONTAINER_COMMANDS+="--interval 7200 --include-stopped --revive-stopped --cleanup "
+CONTAINER_COMMANDS=""
+CONTAINER_COMMANDS+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define additional docker arguments - see docker run --help - [--option arg1,--option2]
 DOCKER_CUSTOM_ARGUMENTS=""
@@ -617,6 +617,13 @@ __setup_cron() {
 # Set custom container enviroment variables - [MYVAR="VAR"]
 __custom_docker_env() {
   cat <<EOF | tee -p | grep -v '^$'
+WATCHTOWER_DEBUG=false
+WATCHTOWER_CLEANUP=true
+WATCHTOWER_ROLLING_RESTART=true
+WATCHTOWER_HTTP_API_UPDATE=true
+WATCHTOWER_HTTP_API_METRICS=true
+WATCHTOWER_INCLUDE_STOPPED=true
+WATCHTOWER_REVIVE_STOPPED=false
 WATCHTOWER_NOTIFICATIONS=\"gotify email\"
 WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${CONTAINER_EMAIL_RELAY_PORT:-587}
