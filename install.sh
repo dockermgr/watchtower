@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011346-git
+##@Version           :  202410011523-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 13:46 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 15:23 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011346-git"
+export VERSION="202410011523-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -348,7 +348,7 @@ DOCKER_ENV_FILE_ENABLED=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
 DOCKER_CONFIG_ENABLED="yes"
-HOST_DOCKER_CONFIG_FILE=""
+HOST_DOCKER_CONFIG_FILE="$HOME/.docker/config.json"
 CONTAINER_DOCKER_CONFIG_FILE="/config.json"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount soundcard - [yes/no] [/dev/snd] [/dev/snd]
@@ -411,7 +411,7 @@ HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
 CONTAINER_WEB_SERVER_ENABLED="no"
-CONTAINER_WEB_SERVER_INT_PORT="8080"
+CONTAINER_WEB_SERVER_INT_PORT="80"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
@@ -576,9 +576,10 @@ CONTAINER_DEBUG_OPTIONS=""
 CONTAINER_CREATE_DIRECTORY="/data/$APPNAME,/data/logs/$APPNAME,/config/$APPNAME "
 CONTAINER_CREATE_DIRECTORY+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# enable the health check - creates a cron script - [yes/no] [/health]
-HOST_SERVER_HEALTH_CHECK_ENABLED="yes"
-HOST_SERVER_HEALTH_CHECK_SERVER_URI="v1/metrics"
+# enable the health check - creates a cron script - [yes/no] [/health] [$CONTAINER_NGINX_PROXY_URL]
+HOST_SERVER_HEALTH_CHECK_ENABLED=""
+HOST_SERVER_HEALTH_CHECK_SERVER_URI=""
+HOST_SERVER_HEALTH_CHECK_SERVER_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Containers default username/password
 CONTAINER_DEFAULT_USERNAME=""
@@ -617,21 +618,6 @@ __setup_cron() {
 # Set custom container enviroment variables - [MYVAR="VAR"]
 __custom_docker_env() {
   cat <<EOF | tee -p | grep -v '^$'
-WATCHTOWER_DEBUG=false
-WATCHTOWER_CLEANUP=true
-WATCHTOWER_ROLLING_RESTART=true
-WATCHTOWER_HTTP_API_UPDATE=true
-WATCHTOWER_HTTP_API_METRICS=true
-WATCHTOWER_INCLUDE_STOPPED=true
-WATCHTOWER_REVIVE_STOPPED=false
-WATCHTOWER_NOTIFICATIONS="gotify email"
-WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
-WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${CONTAINER_EMAIL_RELAY_PORT:-587}
-WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${CONTAINER_EMAIL_RELAY_SERVER:-$HOSTNAME}
-WATCHTOWER_NOTIFICATION_EMAIL_FROM=no-reply@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
-WATCHTOWER_NOTIFICATION_EMAIL_TO=administrator@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
-WATCHTOWER_NOTIFICATION_GOTIFY_URL="$GOTIFY_URL"
-WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN="$GOTIFY_TOKEN"
 
 EOF
 }
@@ -847,6 +833,7 @@ ENV_CONTAINER_DEBUG_OPTIONS="\${ENV_CONTAINER_DEBUG_OPTIONS:-$CONTAINER_DEBUG_OP
 ENV_CONTAINER_CREATE_DIRECTORY="\${ENV_CONTAINER_CREATE_DIRECTORY:-$CONTAINER_CREATE_DIRECTORY}"
 ENV_HOST_SERVER_HEALTH_CHECK_ENABLED="\${ENV_HOST_SERVER_HEALTH_CHECK_ENABLED:-$HOST_SERVER_HEALTH_CHECK_ENABLED}"
 ENV_HOST_SERVER_HEALTH_CHECK_SERVER_URI="\${ENV_HOST_SERVER_HEALTH_CHECK_SERVER_URI:-$HOST_SERVER_HEALTH_CHECK_SERVER_URI}"
+ENV_HOST_SERVER_HEALTH_CHECK_SERVER_NAME="\${ENV_HOST_SERVER_HEALTH_CHECK_SERVER_NAME:-$HOST_SERVER_HEALTH_CHECK_SERVER_NAME}"
 ENV_CONTAINER_DEFAULT_USERNAME="\${ENV_CONTAINER_DEFAULT_USERNAME:-$CONTAINER_DEFAULT_USERNAME}"
 ENV_POST_SHOW_FINISHED_MESSAGE="\${ENV_POST_SHOW_FINISHED_MESSAGE:-$POST_SHOW_FINISHED_MESSAGE}"
 ENV_DOCKERMGR_ENABLE_INSTALL_SCRIPT="\${ENV_DOCKERMGR_ENABLE_INSTALL_SCRIPT:-$DOCKERMGR_ENABLE_INSTALL_SCRIPT}"
@@ -1300,6 +1287,7 @@ CONTAINER_DEBUG_OPTIONS="${ENV_CONTAINER_DEBUG_OPTIONS:-$CONTAINER_DEBUG_OPTIONS
 CONTAINER_CREATE_DIRECTORY="${ENV_CONTAINER_CREATE_DIRECTORY:-$CONTAINER_CREATE_DIRECTORY}"
 HOST_SERVER_HEALTH_CHECK_ENABLED="${ENV_HOST_SERVER_HEALTH_CHECK_ENABLED:-$HOST_SERVER_HEALTH_CHECK_ENABLED}"
 HOST_SERVER_HEALTH_CHECK_SERVER_URI="${ENV_HOST_SERVER_HEALTH_CHECK_SERVER_URI:-$HOST_SERVER_HEALTH_CHECK_SERVER_URI}"
+HOST_SERVER_HEALTH_CHECK_SERVER_NAME="${ENV_HOST_SERVER_HEALTH_CHECK_SERVER_NAME:-$HOST_SERVER_HEALTH_CHECK_SERVER_NAME}"
 CONTAINER_DEFAULT_USERNAME="${ENV_CONTAINER_DEFAULT_USERNAME:-$CONTAINER_DEFAULT_USERNAME}"
 POST_SHOW_FINISHED_MESSAGE="${ENV_POST_SHOW_FINISHED_MESSAGE:-$POST_SHOW_FINISHED_MESSAGE}"
 DOCKERMGR_ENABLE_INSTALL_SCRIPT="${ENV_DOCKERMGR_ENABLE_INSTALL_SCRIPT:-$DOCKERMGR_ENABLE_INSTALL_SCRIPT}"
@@ -2319,7 +2307,7 @@ EOF
 EOF
           fi
         fi
-        CONTAINER_SERVER_TEST_URL="$nginx_proto://$proxy_url$internal_path"
+        HOST_SERVER_HEALTH_CHECK_SERVER_NAME="${HOST_SERVER_HEALTH_CHECK_SERVER_NAME:-$nginx_proto://$proxy_url$internal_path}"
         unset proxy_info proxy_location proxy_url set_hostname
       fi
     fi
@@ -2707,7 +2695,7 @@ NGNIX_REVERSE_ADDRESS="${CONTAINER_NGINX_PROXY_URL:-${NGNIX_REVERSE_ADDRESS:-$HO
 CONTAINER_NGINX_PROXY_URL="${CONTAINER_NGINX_PROXY_URL:-$NGNIX_REVERSE_ADDRESS}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup an internal host
-CONTAINER_SERVER_TEST_URL="${CONTAINER_SERVER_TEST_URL:-$CONTAINER_NGINX_PROXY_URL}"
+HOST_SERVER_HEALTH_CHECK_SERVER_NAME="${HOST_SERVER_HEALTH_CHECK_SERVER_NAME:-$CONTAINER_NGINX_PROXY_URL}"
 NGINX_VHOSTS_PROXY_INT_TMP="/tmp/$$.$HOST_NGINX_INTERNAL_HOST.$HOST_NGINX_INTERNAL_DOMAIN"
 if [ -n "$NGNIX_REVERSE_ADDRESS" ] && [ -n "$HOST_NGINX_INTERNAL_DOMAIN" ]; then
   HOST_NGINX_INTERNAL_DOMAIN="$HOST_NGINX_INTERNAL_HOST.$HOST_NGINX_INTERNAL_DOMAIN"
@@ -2803,11 +2791,11 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     __printf_spacing_color "3" "The internal name is set to:" "$HOST_NGINX_INTERNAL_DOMAIN"
   fi
   printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
-  if [ -n "$CONTAINER_SERVER_TEST_URL" ] && [ "$HOST_SERVER_HEALTH_CHECK_ENABLED" = "yes" ] && [ -n "$HOST_SERVER_HEALTH_CHECK_SERVER_URI" ]; then
-    __printf_spacing_color "6" "Setting health check command to:" "dockermgr server_status $CONTAINER_SERVER_TEST_URL/$HOST_SERVER_HEALTH_CHECK_SERVER_URI"
+  if [ -n "$HOST_SERVER_HEALTH_CHECK_SERVER_NAME" ] && [ "$HOST_SERVER_HEALTH_CHECK_ENABLED" = "yes" ] && [ -n "$HOST_SERVER_HEALTH_CHECK_SERVER_URI" ]; then
+    __printf_spacing_color "6" "Setting health check command to:" "dockermgr server_status $HOST_SERVER_HEALTH_CHECK_SERVER_NAME/$HOST_SERVER_HEALTH_CHECK_SERVER_URI"
     __printf_spacing_color "3" "Saving cron job to: /etc/cron.d/${CONTAINER_NAME}_health"
     __printf_spacing_color "3" "server test file saved to" "$cron_file_name"
-    echo '*/90 * * * * root dockermgr server_status "'$CONTAINER_SERVER_TEST_URL/$HOST_SERVER_HEALTH_CHECK_SERVER_URI'" "'$CONTAINER_NAME'" "'$DOCKERMGR_INSTALL_SCRIPT'"' >"/etc/cron.d/${CONTAINER_NAME}_health"
+    echo '*/90 * * * * root dockermgr server_status "'$HOST_SERVER_HEALTH_CHECK_SERVER_NAME/$HOST_SERVER_HEALTH_CHECK_SERVER_URI'" "'$CONTAINER_NAME'" "'$DOCKERMGR_INSTALL_SCRIPT'"' >"/etc/cron.d/${CONTAINER_NAME}_health"
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if [ "$HOST_CRON_ENABLED" = "yes" ] && [ -n "$HOST_CRON_COMMAND" ]; then
@@ -2870,10 +2858,6 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
         __printf_spacing_color "33" "vhost name:" "$vhost"
       done
     fi
-    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
-  fi
-  if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
-    __printf_spacing_color "6" "Custom port mapping:" "$CONTAINER_ADD_CUSTOM_SINGLE"
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if [ -n "$CONTAINER_USER_ADMIN_HASH_PASS" ]; then
@@ -2952,7 +2936,11 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if [ -z "$SET_PORT" ]; then
-    __printf_spacing_color "3" "This container does not have services configured"
+    if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
+      __printf_spacing_color "6" "Custom port mapping:" "$CONTAINER_ADD_CUSTOM_SINGLE"
+    else
+      intf_spacing_color "3" "This container does not have services configured"
+    fi
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   else
     for create_service in $SET_PORT; do
