@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202409291412-git
+##@Version           :  202410010817-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Sunday, Sep 29, 2024 14:12 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 08:17 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -28,14 +28,14 @@
 # shellcheck disable=SC2199
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-APPNAME="watchtower"
-VERSION="202409291412-git"
-REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
-USER="${SUDO_USER:-$USER}"
-RUN_USER="${RUN_USER:-$USER}"
-USER_HOME="${USER_HOME:-$HOME}"
-SCRIPT_SRC_DIR="${BASH_SOURCE%/*}"
-SCRIPTS_PREFIX="dockermgr"
+export APPNAME="watchtower"
+export VERSION="202410010817-git"
+export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
+export USER="${SUDO_USER:-$USER}"
+export RUN_USER="${RUN_USER:-$USER}"
+export USER_HOME="${USER_HOME:-$HOME}"
+export SCRIPT_SRC_DIR="${BASH_SOURCE%/*}"
+export SCRIPTS_PREFIX="dockermgr"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set bash options
 trap 'retVal=$?;trap_exit' ERR EXIT SIGINT
@@ -66,25 +66,25 @@ fi
 scripts_check
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # image tag - [docker pull DOCKER_HUB_IMAGE_URL:tag]
-export DOCKER_HUB_IMAGE_TAG="latest"
+DOCKER_HUB_IMAGE_TAG="latest"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # docker registry settings
-export DOCKER_REGISTRY_URL="docker.io"
-export DOCKER_REGISTRY_REPO_NAME="$APPNAME"
-export DOCKER_REGISTRY_USER_NAME="casjaysdevdocker"
-export DOCKER_REGISTRY_IMAGE_TAG="$DOCKER_HUB_IMAGE_TAG"
+DOCKER_REGISTRY_URL="docker.io"
+DOCKER_REGISTRY_REPO_NAME="watchtower"
+DOCKER_REGISTRY_USER_NAME="casjaysdevdocker"
+DOCKER_REGISTRY_IMAGE_TAG="$DOCKER_HUB_IMAGE_TAG"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # URL to container image - docker pull - [URL]
-export DOCKER_HUB_IMAGE_URL="$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USER_NAME/$DOCKER_REGISTRY_REPO_NAME"
+DOCKER_HUB_IMAGE_URL="$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USER_NAME/$DOCKER_REGISTRY_REPO_NAME"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SET_CONTAINER_NAME="${DOCKER_REGISTRY_USER_NAME}-${DOCKER_REGISTRY_REPO_NAME}-${DOCKER_HUB_IMAGE_TAG}"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Repository variables
-export REPO="${DOCKERMGRREPO:-https://github.com/$SCRIPTS_PREFIX}/$APPNAME"
-export APPVERSION="$(__appversion "$REPO/raw/$REPO_BRANCH/version.txt")"
+REPO="${DOCKERMGRREPO:-https://github.com/$SCRIPTS_PREFIX}/$APPNAME"
+APPVERSION="$(__appversion "$REPO/raw/$REPO_BRANCH/version.txt")"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Defaults variables
-export DOCKERMGR_CONFIG_DIR="$HOME/.config/myscripts/$SCRIPTS_PREFIX"
+DOCKERMGR_CONFIG_DIR="$HOME/.config/myscripts/$SCRIPTS_PREFIX"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SET_INSTDIR="$HOME/.local/share/CasjaysDev/$SCRIPTS_PREFIX/$APPNAME"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -397,7 +397,7 @@ CONTAINER_WEB_SERVER_WWW_DIR=""
 CONTAINER_WEB_SERVER_WWW_REPO=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Specify custom nginx vhosts - autoconfigure: [all.name/name.all/name.mydomain/name.myhost] - [virtualhost,othervhostdom]
-CONTAINER_WEB_SERVER_VHOSTS="watchtower.myhost"
+CONTAINER_WEB_SERVER_VHOSTS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add random portmapping - [port,otherport] or [proxy|/location|port]
 CONTAINER_ADD_RANDOM_PORTS=""
@@ -924,8 +924,6 @@ export HOST_DATA_DIR="$HOST_ROOTFS_DIR/data"
 export HOST_CONFIG_DIR="$HOST_ROOTFS_DIR/config"
 export LOCAL_DATA_DIR="${LOCAL_DATA_DIR:-$HOST_DATA_DIR}"
 export LOCAL_CONFIG_DIR="${LOCAL_CONFIG_DIR:-$HOST_CONFIG_DIR}"
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-export DATADIR APPDIR INSTDIR
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # import variables from a file
 [ -f "$INSTDIR/env.sh" ] && . "$INSTDIR/env.sh"
