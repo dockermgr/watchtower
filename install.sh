@@ -404,7 +404,7 @@ CONTAINER_WEB_SERVER_VHOSTS="watchtower.$HOSTNAME"
 CONTAINER_ADD_RANDOM_PORTS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port -  [exter:inter] or [.all:exter:inter/[tcp,udp] [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$(random_port):$CONTAINER_WEB_SERVER_INT_PORT/tcp"
+CONTAINER_ADD_CUSTOM_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$(__rport):$CONTAINER_WEB_SERVER_INT_PORT/tcp"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
