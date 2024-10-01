@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011002-git
+##@Version           :  202410011054-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 10:02 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 10:54 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011002-git"
+export VERSION="202410011054-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -196,6 +196,7 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
+  __printf_spacing_color "Run $HOST_CRON_COMMAND to update containers"
 
   return 0
 }
@@ -312,8 +313,8 @@ HOST_ETC_HOSTS_ENABLED="no"
 HOST_ETC_HOSTS_INIT_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker socket - [yes/no] [/var/run/docker.sock] [yes/no]
-DOCKER_SOCKET_ENABLED="yes"
-DOCKER_SOCKER_READONLY="no"
+DOCKER_SOCKET_ENABLED="no"
+DOCKER_SOCKER_READONLY="yes"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Will set --env-file "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.env" to docker run [yes/no]
@@ -383,7 +384,7 @@ HOST_NGINX_LISTEN_ON_IP_ADDRESS=""
 HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
-CONTAINER_WEB_SERVER_ENABLED="yes"
+CONTAINER_WEB_SERVER_ENABLED="no"
 CONTAINER_WEB_SERVER_INT_PORT="8080"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
@@ -403,7 +404,7 @@ CONTAINER_WEB_SERVER_VHOSTS="watchtower.$HOSTNAME"
 CONTAINER_ADD_RANDOM_PORTS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port -  [exter:inter] or [.all:exter:inter/[tcp,udp] [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT=""
+CONTAINER_ADD_CUSTOM_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$(random_port):$CONTAINER_WEB_SERVER_INT_PORT/tcp"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
@@ -472,7 +473,7 @@ CONTAINER_ENV_USER_NAME=""
 CONTAINER_ENV_PASS_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If container has an api token set it here - [ENV_NAME] [token/random]
-CONTAINER_API_KEY_NAME="WATCHTOWER_HTTP_API_TOKEN"
+CONTAINER_API_KEY_NAME=""
 CONTAINER_API_KEY_TOKEN="random"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If container has an secret key set it here - [ENV_NAME] [token/random]
@@ -531,8 +532,8 @@ CONTAINER_LABELS=""
 CONTAINER_LABELS+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Specify container arguments - will run in container - [/path/to/script]
-CONTAINER_COMMANDS="--debug --http-api-update --http-api-metrics --rolling-restart "
-CONTAINER_COMMANDS+="--interval 7200 --include-stopped --revive-stopped --cleanup "
+CONTAINER_COMMANDS=""
+CONTAINER_COMMANDS+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define additional docker arguments - see docker run --help - [--option arg1,--option2]
 DOCKER_CUSTOM_ARGUMENTS=""
@@ -566,7 +567,7 @@ INIT_SCRIPT_ONLY="no"
 # enable cron jobs [yes/no] [user] [command_to_execute] [[0-59] [0-23] [0-6] [1-31] [1-12] [file] or [@hourly/@daily/@monthly/@yearly]]
 __setup_cron() {
   HOST_CRON_ENABLED="yes"
-  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_NGINX_PROXY_URL/v1/update\""
+  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"http://${CONTAINER_ADD_CUSTOM_PORT//:$CONTAINER_WEB_SERVER_INT_PORT*/}/v1/update\""
   HOST_CRON_USER="root"
   HOST_CRON_MIN='30'
   HOST_CRON_HOUR='*/6'
@@ -2655,10 +2656,14 @@ if [ "$NINGX_VHOSTS_WRITABLE" = "true" ]; then
   fi
   [ -f "$NGINX_MAIN_CONFIG" ] && NGINX_PROXY_URL="$CONTAINER_WEB_SERVER_PROTOCOL://$CONTAINER_HOSTNAME"
 fi
+if [ "$NGINX_VHOST_NAMES" = "" ] || [ "$NGINX_VHOST_NAMES" = " " ]; then
+  unset NGINX_VHOST_NAMES
+else
+  NGINX_VHOST_NAMES="${NGINX_VHOST_NAMES//,/ }"
+fi
 HOST_NGINX_PROXY_URL="${HOST_NGINX_PROXY_URL:-${NGNIX_REVERSE_ADDRESS:-$NGINX_PROXY_URL}}"
 NGNIX_REVERSE_ADDRESS="${CONTAINER_NGINX_PROXY_URL:-${NGNIX_REVERSE_ADDRESS:-$NGINX_PROXY_URL}}"
 CONTAINER_NGINX_PROXY_URL="${CONTAINER_NGINX_PROXY_URL:-$NGNIX_REVERSE_ADDRESS}"
-{ [ "$NGINX_VHOST_NAMES" = "" ] || [ "$NGINX_VHOST_NAMES" = " " ]; } && unset NGINX_VHOST_NAMES
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup an internal host
 CONTAINER_SERVER_TEST_URL="${CONTAINER_SERVER_TEST_URL:-$NGNIX_REVERSE_ADDRESS}"
@@ -2712,6 +2717,8 @@ EOF
   NGINX_VHOST_NAMES="$NGINX_VHOST_NAMES $HOST_NGINX_INTERNAL_DOMAIN"
   [ -f "$NGINX_DIR/vhosts.d/$HOST_NGINX_INTERNAL_DOMAIN.conf" ] && NGINX_INTERNAL_IS_SET="$NGINX_DIR/vhosts.d/$HOST_NGINX_INTERNAL_DOMAIN.conf"
 fi
+CONTAINER_WEB_SERVER_VHOSTS="${CONTAINER_WEB_SERVER_VHOSTS:-$NGINX_VHOST_NAMES}"
+CONTAINER_WEB_SERVER_VHOSTS="${CONTAINER_WEB_SERVER_VHOSTS//,/ }"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # finalize
 __setup_cron
@@ -2721,9 +2728,8 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
   HOSTS_WRITABLE="$(sudo -n true && sudo bash -c '[ -w "/etc/hosts" ] && echo "true" || false' || echo 'false')"
   printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   if [ "$HOSTS_WRITABLE" = "true" ]; then
-    if [ -n "$NGINX_VHOST_NAMES" ]; then
-      NGINX_VHOST_NAMES="${NGINX_VHOST_NAMES//,/ }"
-      for vhost in $NGINX_VHOST_NAMES; do
+    if [ -n "$CONTAINER_WEB_SERVER_VHOSTS" ] && [ "$CONTAINER_WEB_SERVER_VHOSTS" != " " ]; then
+      for vhost in $CONTAINER_WEB_SERVER_VHOSTS; do
         if ! grep -shhq " $vhost$" "/etc/hosts"; then
           if echo "$vhost" | grep -qFv '*'; then
             __printf_spacing_color "40" "Adding to /etc/hosts:" "$vhost $CONTAINER_WEB_SERVER_LISTEN_ON"
@@ -2917,7 +2923,6 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
           create_service="${create_service//set_custom_service/}"
         fi
         service="${create_service// /}"
-        service="$create_service"
         if [ -n "$service" ] && [ "$service" != " " ]; then
           if echo "$service" | grep -q ":.*.:"; then
             set_host="$(echo "$service" | awk -F ':' '{print $1}')"
