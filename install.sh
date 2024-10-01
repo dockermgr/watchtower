@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011222-git
+##@Version           :  202410011346-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 12:22 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 13:46 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011222-git"
+export VERSION="202410011346-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -337,18 +337,19 @@ HOST_ETC_RESOLVE_INIT_FILE=""
 HOST_ETC_HOSTS_ENABLED="no"
 HOST_ETC_HOSTS_INIT_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Mount docker socket - [yes/no] [/var/run/docker.sock] [yes/no]
+# Mount docker socket - [yes/no] [yes/no] [/var/run/docker.sock] [/var/run/docker.sock]
 DOCKER_SOCKET_ENABLED="yes"
 DOCKER_SOCKER_READONLY="no"
-DOCKER_SOCKET_MOUNT=""
+HOST_DOCKER_SOCKET_MOUNT="/var/run/docker.sock"
+CONTAINER_DOCKER_SOCKET_MOUNT="/var/run/docker.sock"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Will set --env-file "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.env" to docker run [yes/no]
 DOCKER_ENV_FILE_ENABLED=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
-DOCKER_CONFIG_ENABLED="no"
-HOST_DOCKER_CONFIG=""
-CONTAINER_DOCKER_CONFIG_FILE=""
+DOCKER_CONFIG_ENABLED="yes"
+HOST_DOCKER_CONFIG_FILE=""
+CONTAINER_DOCKER_CONFIG_FILE="/config.json"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount soundcard - [yes/no] [/dev/snd] [/dev/snd]
 DOCKER_SOUND_ENABLED="no"
@@ -410,7 +411,7 @@ HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
 CONTAINER_WEB_SERVER_ENABLED="no"
-CONTAINER_WEB_SERVER_INT_PORT="8080"
+CONTAINER_WEB_SERVER_INT_PORT="80"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
@@ -576,8 +577,8 @@ CONTAINER_CREATE_DIRECTORY="/data/$APPNAME,/data/logs/$APPNAME,/config/$APPNAME 
 CONTAINER_CREATE_DIRECTORY+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # enable the health check - creates a cron script - [yes/no] [/health]
-HOST_SERVER_HEALTH_CHECK_ENABLED=""
-HOST_SERVER_HEALTH_CHECK_SERVER_URI=""
+HOST_SERVER_HEALTH_CHECK_ENABLED="yes"
+HOST_SERVER_HEALTH_CHECK_SERVER_URI="v1/metrics"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Containers default username/password
 CONTAINER_DEFAULT_USERNAME=""
@@ -616,6 +617,14 @@ __setup_cron() {
 # Set custom container enviroment variables - [MYVAR="VAR"]
 __custom_docker_env() {
   cat <<EOF | tee -p | grep -v '^$'
+WATCHTOWER_NOTIFICATIONS=\"gotify email\"
+WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${CONTAINER_EMAIL_RELAY_PORT:-587}
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${CONTAINER_EMAIL_RELAY_SERVER:-$HOSTNAME}
+WATCHTOWER_NOTIFICATION_EMAIL_FROM=no-reply@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
+WATCHTOWER_NOTIFICATION_EMAIL_TO=administrator@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
+WATCHTOWER_NOTIFICATION_GOTIFY_URL="$GOTIFY_URL"
+WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN="$GOTIFY_TOKEN"
 
 EOF
 }
@@ -709,10 +718,11 @@ ENV_HOST_ETC_HOSTS_ENABLED="\${ENV_HOST_ETC_HOSTS_ENABLED:-$HOST_ETC_HOSTS_ENABL
 ENV_HOST_ETC_HOSTS_INIT_FILE="\${ENV_HOST_ETC_HOSTS_INIT_FILE:-$HOST_ETC_HOSTS_INIT_FILE}"
 ENV_DOCKER_SOCKET_ENABLED="\${ENV_DOCKER_SOCKET_ENABLED:-$DOCKER_SOCKET_ENABLED}"
 ENV_DOCKER_SOCKER_READONLY="\${ENV_DOCKER_SOCKER_READONLY:-$DOCKER_SOCKER_READONLY}"
-ENV_DOCKER_SOCKET_MOUNT="\${ENV_DOCKER_SOCKET_MOUNT:-$DOCKER_SOCKET_MOUNT}"
+ENV_HOST_DOCKER_SOCKET_MOUNT="\${ENV_HOST_DOCKER_SOCKET_MOUNT:-$HOST_DOCKER_SOCKET_MOUNT}"
+ENV_CONTAINER_DOCKER_SOCKET_MOUNT="\${ENV_CONTAINER_DOCKER_SOCKET_MOUNT:-$CONTAINER_DOCKER_SOCKET_MOUNT}"
 ENV_DOCKER_ENV_FILE_ENABLED="\${ENV_DOCKER_ENV_FILE_ENABLED:-$DOCKER_ENV_FILE_ENABLED}"
 ENV_DOCKER_CONFIG_ENABLED="\${ENV_DOCKER_CONFIG_ENABLED:-$DOCKER_CONFIG_ENABLED}"
-ENV_HOST_DOCKER_CONFIG="\${ENV_HOST_DOCKER_CONFIG:-$HOST_DOCKER_CONFIG}"
+ENV_HOST_DOCKER_CONFIG="\${ENV_HOST_DOCKER_CONFIG:-$HOST_DOCKER_CONFIG_FILE}"
 ENV_CONTAINER_DOCKER_CONFIG_FILE="\${ENV_CONTAINER_DOCKER_CONFIG_FILE:-$CONTAINER_DOCKER_CONFIG_FILE}"
 ENV_DOCKER_SOUND_ENABLED="\${ENV_DOCKER_SOUND_ENABLED:-$DOCKER_SOUND_ENABLED}"
 ENV_HOST_SOUND_DEVICE="\${ENV_HOST_SOUND_DEVICE:-$HOST_SOUND_DEVICE}"
@@ -1161,10 +1171,11 @@ HOST_ETC_HOSTS_ENABLED="${ENV_HOST_ETC_HOSTS_ENABLED:-$HOST_ETC_HOSTS_ENABLED}"
 HOST_ETC_HOSTS_INIT_FILE="${ENV_HOST_ETC_HOSTS_INIT_FILE:-$HOST_ETC_HOSTS_INIT_FILE}"
 DOCKER_SOCKET_ENABLED="${ENV_DOCKER_SOCKET_ENABLED:-$DOCKER_SOCKET_ENABLED}"
 DOCKER_SOCKER_READONLY="${ENV_DOCKER_SOCKER_READONLY:-$DOCKER_SOCKER_READONLY}"
-DOCKER_SOCKET_MOUNT="${ENV_DOCKER_SOCKET_MOUNT:-$DOCKER_SOCKET_MOUNT}"
+HOST_DOCKER_SOCKET_MOUNT="${ENV_HOST_DOCKER_SOCKET_MOUNT:-$HOST_DOCKER_SOCKET_MOUNT}"
+CONTAINER_DOCKER_SOCKET_MOUNT="${ENV_CONTAINER_DOCKER_SOCKET_MOUNT:-$CONTAINER_DOCKER_SOCKET_MOUNT}"
 DOCKER_ENV_FILE_ENABLED="${ENV_DOCKER_ENV_FILE_ENABLED:-$DOCKER_ENV_FILE_ENABLED}"
 DOCKER_CONFIG_ENABLED="${ENV_DOCKER_CONFIG_ENABLED:-$DOCKER_CONFIG_ENABLED}"
-HOST_DOCKER_CONFIG="${ENV_HOST_DOCKER_CONFIG:-$HOST_DOCKER_CONFIG}"
+HOST_DOCKER_CONFIG_FILE="${ENV_HOST_DOCKER_CONFIG:-$HOST_DOCKER_CONFIG_FILE}"
 CONTAINER_DOCKER_CONFIG_FILE="${ENV_CONTAINER_DOCKER_CONFIG_FILE:-$CONTAINER_DOCKER_CONFIG_FILE}"
 DOCKER_SOUND_ENABLED="${ENV_DOCKER_SOUND_ENABLED:-$DOCKER_SOUND_ENABLED}"
 HOST_SOUND_DEVICE="${ENV_HOST_SOUND_DEVICE:-$HOST_SOUND_DEVICE}"
@@ -1459,15 +1470,16 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount the docker socket
 if [ "$DOCKER_SOCKET_ENABLED" = "yes" ]; then
-  if [ -z "$DOCKER_SOCKET_MOUNT" ]; then
-    if [ -e "/var/run/docker.sock" ]; then
-      DOCKER_SOCKET_TMP_MOUNT="/var/run/docker.sock:/var/run/docker.sock"
-    elif [ -e "$DOCKER_SOCKET_MOUNT" ]; then
-      DOCKER_SOCKET_TMP_MOUNT="$DOCKER_SOCKET_MOUNT:/var/run/docker.sock"
-    fi
+  if [ -z "$HOST_DOCKER_SOCKET_MOUNT" ]; then
+    HOST_DOCKER_SOCKET_MOUNT="/var/run/docker.sock"
+  fi
+  if [ -z "$CONTAINER_DOCKER_SOCKET_MOUNT" ]; then
+    CONTAINER_DOCKER_SOCKET_MOUNT="/var/run/docker.sock"
   fi
   if [ "$DOCKER_SOCKER_READONLY" = "yes" ]; then
-    DOCKER_SOCKET_TMP_MOUNT="$DOCKER_SOCKET_TMP_MOUNT:ro"
+    DOCKER_SOCKET_TMP_MOUNT="$HOST_DOCKER_SOCKET_MOUNT:$CONTAINER_DOCKER_SOCKET_MOUNT:ro"
+  else
+    DOCKER_SOCKET_TMP_MOUNT="$HOST_DOCKER_SOCKET_MOUNT:$CONTAINER_DOCKER_SOCKET_MOUNT"
   fi
   DOCKER_SET_OPTIONS_VOLUME+=("--volume $DOCKER_SOCKET_TMP_MOUNT")
   unset DOCKER_SOCKET_TMP_MOUNT
@@ -1479,8 +1491,8 @@ if [ -r "$CONTAINER_DOCKER_CONFIG_FILE" ] || [ -r "$HOME/.docker/config.json" ];
     if [ -z "$CONTAINER_DOCKER_CONFIG_FILE" ]; then
       CONTAINER_DOCKER_CONFIG_FILE="/root/.docker/config.json"
     fi
-    if [ -n "$HOST_DOCKER_CONFIG" ]; then
-      DOCKER_SET_OPTIONS_VOLUME+=("--volume $HOST_DOCKER_CONFIG:$CONTAINER_DOCKER_CONFIG_FILE:ro")
+    if [ -n "$HOST_DOCKER_CONFIG_FILE" ]; then
+      DOCKER_SET_OPTIONS_VOLUME+=("--volume $HOST_DOCKER_CONFIG_FILE:$CONTAINER_DOCKER_CONFIG_FILE:ro")
     elif [ -f "$HOME/.docker/config.json" ]; then
       DOCKER_SET_OPTIONS_VOLUME+=("--volume $HOME/.docker/config.json:$CONTAINER_DOCKER_CONFIG_FILE:ro")
     fi
