@@ -566,7 +566,7 @@ INIT_SCRIPT_ONLY="no"
 # enable cron jobs [yes/no] [user] [command_to_execute] [[0-59] [0-23] [0-6] [1-31] [1-12] [file] or [@hourly/@daily/@monthly/@yearly]]
 __setup_cron() {
   HOST_CRON_ENABLED="yes"
-  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"$CONTAINER_NGINX_PROXY_URL/v1/update\""
+  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"${CONTAINER_NGINX_PROXY_URL:-$NGNIX_REVERSE_ADDRESS}/v1/update\""
   HOST_CRON_USER="root"
   HOST_CRON_MIN='30'
   HOST_CRON_HOUR='*/6'
