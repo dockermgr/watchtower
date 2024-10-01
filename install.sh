@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011114-git
+##@Version           :  202410011146-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 11:14 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 11:46 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011114-git"
+export VERSION="202410011146-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -220,6 +220,7 @@ run_post_custom() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
   __printf_spacing_color "To manually update run: $HOST_CRON_COMMAND"
+
   return 0
 }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -371,7 +372,7 @@ CONTAINER_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set container hostname and domain - Default: [$APPNAME.$SET_HOST_FULL_NAME] [$SET_HOST_FULL_DOMAIN] or [hostname]
 CONTAINER_HOSTNAME=""
-CONTAINER_DOMAINNAME="hostname"
+CONTAINER_DOMAINNAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the network type - default is bridge - [bridge/host]
 HOST_DOCKER_NETWORK="bridge"
@@ -392,7 +393,7 @@ CONTAINER_PROTOCOL="http"
 CONTAINER_DNS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup nginx proxy variables - [yes/no] [yes/no] [http] [https] [yes/no] [ip_address]
-HOST_NGINX_ENABLED="no"
+HOST_NGINX_ENABLED="yes"
 HOST_NGINX_SSL_ENABLED="yes"
 HOST_NGINX_HTTP_PORT="80"
 HOST_NGINX_HTTPS_PORT="443"
@@ -407,7 +408,7 @@ HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
 CONTAINER_WEB_SERVER_ENABLED="no"
-CONTAINER_WEB_SERVER_INT_PORT="8080"
+CONTAINER_WEB_SERVER_INT_PORT="80"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
 CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
@@ -426,7 +427,10 @@ CONTAINER_WEB_SERVER_VHOSTS=""
 CONTAINER_ADD_RANDOM_PORTS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port -  [exter:inter] or [.all:exter:inter/[tcp,udp] [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$(__rport):$CONTAINER_WEB_SERVER_INT_PORT"
+CONTAINER_ADD_CUSTOM_PORT=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Create a single port mapping [listen]:[externalPort/random]:[internalPort]
+CONTAINER_ADD_CUSTOM_SINGLE="$CONTAINER_WEB_SERVER_LISTEN_ON:random:$CONTAINER_WEB_SERVER_INT_PORT"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
@@ -589,14 +593,14 @@ INIT_SCRIPT_ONLY="no"
 # enable cron jobs [yes/no] [user] [command_to_execute] [[0-59] [0-23] [0-6] [1-31] [1-12] [file] or [@hourly/@daily/@monthly/@yearly]]
 __setup_cron() {
   HOST_CRON_ENABLED="yes"
-  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"http://${CONTAINER_ADD_CUSTOM_PORT//:$CONTAINER_WEB_SERVER_INT_PORT*/}/v1/update\""
+  HOST_CRON_COMMAND="curl -q -LSsf -H \"Authorization: Bearer ${CONTAINER_API_KEY_TOKEN}\" \"http://$CONTAINER_ADD_CUSTOM_SINGLE/v1/update\""
   HOST_CRON_USER="root"
   HOST_CRON_MIN='30'
   HOST_CRON_HOUR='*/6'
   HOST_CRON_WEEK_DAY='*'
   HOST_CRON_MONTH_DAY='*'
   HOST_CRON_MONTH_NAME='*'
-  HOST_CRON_LOG_FILE="/dev/null 2>&1"
+  HOST_CRON_LOG_FILE="/dev/null"
   # [@hourly/@daily/@monthly/@yearly]
   HOST_CRON_AT_SCHEDULE=''
   # NO NEED TO CHANGE
@@ -1767,6 +1771,10 @@ if [ "$CONTAINER_IS_TIME_SERVER" = "yes" ]; then
   unset service_port
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
+  DOCKER_SET_TMP_PUBLISH+=("--publish $CONTAINER_ADD_CUSTOM_SINGLE")
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Database setup
 if [ -n "$CONTAINER_CREATE_DATABASE_NAME" ]; then
   DOCKER_SET_OPTIONS_ENV+=("--env DATABASE_CREATE=$CONTAINER_CREATE_DATABASE_NAME")
@@ -2131,6 +2139,10 @@ if [ -n "$CONTAINER_LABELS" ]; then
     fi
   done
   unset label
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
+  CONTAINER_ADD_CUSTOM_SINGLE="${CONTAINER_ADD_CUSTOM_SINGLE//:random:/:(__rport):}"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup custom port mappings
@@ -2781,7 +2793,7 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     __printf_spacing_color "6" "Setting cron user to:" "$HOST_CRON_USER"
     __printf_spacing_color "6" "Setting schedule to:" "$HOST_CRON_SCHEDULE"
     __printf_spacing_color "3" "Saving cron job to: /etc/cron.d/${CONTAINER_NAME}_cron"
-    echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND >$HOST_CRON_LOG_FILE" | sudo tee -p "/etc/cron.d/${CONTAINER_NAME}_cron" &>/dev/null
+    echo "$HOST_CRON_SCHEDULE $HOST_CRON_USER $HOST_CRON_COMMAND >$HOST_CRON_LOG_FILE 2>&1" | sudo tee -p "/etc/cron.d/${CONTAINER_NAME}_cron" &>/dev/null
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if __ssl_certs; then
@@ -2835,6 +2847,21 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
         __printf_spacing_color "33" "vhost name:" "$vhost"
       done
     fi
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  fi
+  if [ -n "$SET_PORT" ] && [ -n "$NGINX_PROXY_URL" ]; then
+    MESSAGE="true"
+    __printf_spacing_color "33" "Server address:" "$NGINX_PROXY_URL"
+    if [ -n "$NGINX_VHOST_NAMES" ]; then
+      NGINX_VHOST_NAMES="${NGINX_VHOST_NAMES//,/ }"
+      for vhost in $NGINX_VHOST_NAMES; do
+        __printf_spacing_color "33" "vhost name:" "$vhost"
+      done
+    fi
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  fi
+  if [ -n "$CONTAINER_ADD_CUSTOM_SINGLE" ]; then
+    __printf_spacing_color "6" "Custom port mapping:" "$CONTAINER_ADD_CUSTOM_SINGLE"
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
   if [ -n "$CONTAINER_USER_ADMIN_HASH_PASS" ]; then
