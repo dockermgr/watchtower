@@ -219,7 +219,7 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-  __printf_spacing_color "To manually update run: $HOST_CRON_COMMAND"
+  __printf_spacing_color "147" "To manually update run: $HOST_CRON_COMMAND"
 
   return 0
 }
