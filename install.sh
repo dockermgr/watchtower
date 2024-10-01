@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011054-git
+##@Version           :  202410011114-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 10:54 EDT
+# @@Created          :  Tuesday, Oct 01, 2024 11:14 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011054-git"
+export VERSION="202410011114-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -196,7 +196,6 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-  __printf_spacing_color "Run $HOST_CRON_COMMAND to update containers"
 
   return 0
 }
@@ -313,8 +312,8 @@ HOST_ETC_HOSTS_ENABLED="no"
 HOST_ETC_HOSTS_INIT_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker socket - [yes/no] [/var/run/docker.sock] [yes/no]
-DOCKER_SOCKET_ENABLED="no"
-DOCKER_SOCKER_READONLY="yes"
+DOCKER_SOCKET_ENABLED="yes"
+DOCKER_SOCKER_READONLY="no"
 DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Will set --env-file "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.env" to docker run [yes/no]
@@ -370,7 +369,7 @@ CONTAINER_PROTOCOL="http"
 CONTAINER_DNS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup nginx proxy variables - [yes/no] [yes/no] [http] [https] [yes/no] [ip_address]
-HOST_NGINX_ENABLED="yes"
+HOST_NGINX_ENABLED="no"
 HOST_NGINX_SSL_ENABLED="yes"
 HOST_NGINX_HTTP_PORT="80"
 HOST_NGINX_HTTPS_PORT="443"
@@ -398,13 +397,13 @@ CONTAINER_WEB_SERVER_WWW_DIR=""
 CONTAINER_WEB_SERVER_WWW_REPO=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Specify custom nginx vhosts - autoconfigure: [all.name/name.all/name.mydomain/name.myhost] - [virtualhost,othervhostdom]
-CONTAINER_WEB_SERVER_VHOSTS="watchtower.$HOSTNAME"
+CONTAINER_WEB_SERVER_VHOSTS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add random portmapping - [port,otherport] or [proxy|/location|port]
 CONTAINER_ADD_RANDOM_PORTS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add custom port -  [exter:inter] or [.all:exter:inter/[tcp,udp] [listen:exter:inter/[tcp,udp]] random:[inter]
-CONTAINER_ADD_CUSTOM_PORT="$CONTAINER_WEB_SERVER_LISTEN_ON:$(__rport):$CONTAINER_WEB_SERVER_INT_PORT/tcp"
+CONTAINER_ADD_CUSTOM_PORT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # mail settings - [yes/no] [user] [domainname] [server]
 CONTAINER_EMAIL_ENABLED=""
@@ -473,7 +472,7 @@ CONTAINER_ENV_USER_NAME=""
 CONTAINER_ENV_PASS_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If container has an api token set it here - [ENV_NAME] [token/random]
-CONTAINER_API_KEY_NAME=""
+CONTAINER_API_KEY_NAME="WATCHTOWER_HTTP_API_TOKEN"
 CONTAINER_API_KEY_TOKEN="random"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # If container has an secret key set it here - [ENV_NAME] [token/random]
@@ -532,8 +531,8 @@ CONTAINER_LABELS=""
 CONTAINER_LABELS+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Specify container arguments - will run in container - [/path/to/script]
-CONTAINER_COMMANDS=""
-CONTAINER_COMMANDS+=""
+CONTAINER_COMMANDS="--debug --http-api-update --http-api-metrics --rolling-restart "
+CONTAINER_COMMANDS+="--interval 7200 --include-stopped --revive-stopped --cleanup "
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define additional docker arguments - see docker run --help - [--option arg1,--option2]
 DOCKER_CUSTOM_ARGUMENTS=""
@@ -1631,8 +1630,9 @@ HOST_LISTEN_ADDR="${HOST_LISTEN_ADDR//:*/}"
 NGINX_VHOSTS_CONF_FILE_TMP="/tmp/$$.$APPNAME.conf"
 NGINX_VHOSTS_INC_FILE_TMP="/tmp/$$.$APPNAME.inc.conf"
 NGINX_VHOSTS_PROXY_FILE_TMP="/tmp/$$.$APPNAME.custom.conf"
+NGINX_TMP_FILES="$(__trim "$NGINX_VHOSTS_CONF_FILE_TMP" "$NGINX_VHOSTS_INC_FILE_TMP" "$NGINX_VHOSTS_PROXY_FILE_TMP")"
 NINGX_WRITABLE="$(sudo -n true && sudo bash -c '[ -w "/etc/nginx" ] && echo "true" || false' || echo 'false')"
-if [ "$HOST_NGINX_ENABLED" = "yes" ]; then
+if [ "$HOST_NGINX_ENABLED" = "yes" ] && [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ]; then
   if [ -f "/etc/nginx/nginx.conf" ] && [ "$NINGX_WRITABLE" = "true" ]; then
     NGINX_DIR="/etc/nginx"
   else
@@ -1669,7 +1669,12 @@ if [ "$HOST_NGINX_ENABLED" = "yes" ]; then
   if [ ! -f "$NGINX_MAIN_CONFIG" ]; then
     HOST_NGINX_UPDATE_CONF="yes"
   fi
+else
+  for nginx_tmp in $NGINX_TMP_FILES; do
+    [ -f "$nginx_tmp" ] && rm -Rf "$nginx_tmp"
+  done
 fi
+unset nginx_tmp
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup containers web server
 if [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ]; then
@@ -2285,6 +2290,7 @@ EOF
       fi
     fi
   done
+  [ "$CONTAINER_WEB_SERVER_ENABLED" = "yes" ] || rm -Rf "$NGINX_VHOSTS_PROXY_FILE_TMP"
   [ -n "$CONTAINER_PUBLISHED_PORT" ] && DOCKER_SET_TMP_PUBLISH=("${CONTAINER_PUBLISHED_PORT//--publish,/}")
   CONTAINER_PUBLISHED_PORT="${DOCKER_SET_TMP_PUBLISH[*]}"
   CONTAINER_PUBLISHED_PORT="${CONTAINER_PUBLISHED_PORT// /,}"
