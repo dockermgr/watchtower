@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410011523-git
+##@Version           :  202410080902-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 01, 2024 15:23 EDT
+# @@Created          :  Tuesday, Oct 08, 2024 09:02 EDT
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410011523-git"
+export VERSION="202410080902-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -221,7 +221,6 @@ run_post_custom() {
 #
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
-  __printf_spacing_color 127 "To manually update run:" "$HOST_CRON_COMMAND"
 
   return 0
 }
@@ -340,16 +339,16 @@ HOST_ETC_HOSTS_INIT_FILE=""
 # Mount docker socket - [yes/no] [yes/no] [/var/run/docker.sock] [/var/run/docker.sock]
 DOCKER_SOCKET_ENABLED="yes"
 DOCKER_SOCKER_READONLY="no"
-HOST_DOCKER_SOCKET_MOUNT="/var/run/docker.sock"
-CONTAINER_DOCKER_SOCKET_MOUNT="/var/run/docker.sock"
+HOST_DOCKER_SOCKET_MOUNT=""
+CONTAINER_DOCKER_SOCKET_MOUNT=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Will set --env-file "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.env" to docker run [yes/no]
 DOCKER_ENV_FILE_ENABLED=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount docker config - [yes/no] [~/.docker/config.json] [/root/.docker/config.json]
-DOCKER_CONFIG_ENABLED="yes"
-HOST_DOCKER_CONFIG_FILE="$HOME/.docker/config.json"
-CONTAINER_DOCKER_CONFIG_FILE="/config.json"
+DOCKER_CONFIG_ENABLED="no"
+HOST_DOCKER_CONFIG_FILE=""
+CONTAINER_DOCKER_CONFIG_FILE=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Mount soundcard - [yes/no] [/dev/snd] [/dev/snd]
 DOCKER_SOUND_ENABLED="no"
@@ -459,7 +458,7 @@ CONTAINER_DATABASE_CREATE=""
 # Database settings - [listen] [yes/no]
 CONTAINER_DATABASE_LISTEN=""
 CONTAINER_REDIS_ENABLED="no"
-CONTAINER_SQLITE_ENABLED="no"
+CONTAINER_SQLITE_ENABLED="yes"
 CONTAINER_MARIADB_ENABLED="no"
 CONTAINER_MONGODB_ENABLED="no"
 CONTAINER_COUCHDB_ENABLED="no"
@@ -618,15 +617,36 @@ __setup_cron() {
 # Set custom container enviroment variables - [MYVAR="VAR"]
 __custom_docker_env() {
   cat <<EOF | tee -p | grep -v '^$'
+NO_COLOR=false
+DOCKER_HOST="unix:///var/run/docker.sock"
+DOCKER_API_VERSION="1.24"
 WATCHTOWER_DEBUG=false
+WATCHTOWER_TRACE=false
+WATCHTOWER_LOG_LEVEL=warn
+WATCHTOWER_LOG_FORMAT=auto
+WATCHTOWER_TIMEOUT="30s"
 WATCHTOWER_CLEANUP=true
+WATCHTOWER_REMOVE_VOLUMES=true
 WATCHTOWER_ROLLING_RESTART=true
+WATCHTOWER_REVIVE_STOPPED=false
+WATCHTOWER_INCLUDE_STOPPED=false
+WATCHTOWER_INCLUDE_RESTARTING=false
+WATCHTOWER_POLL_INTERVAL="86400"
+WATCHTOWER_HTTP_API_PERIODIC_POLLS=true
+WATCHTOWER_LABEL_ENABLE=false
+WATCHTOWER_MONITOR_ONLY=false
 WATCHTOWER_HTTP_API_UPDATE=true
 WATCHTOWER_HTTP_API_METRICS=true
 WATCHTOWER_INCLUDE_STOPPED=true
 WATCHTOWER_REVIVE_STOPPED=false
+WATCHTOWER_NO_STARTUP_MESSAGE=true
 WATCHTOWER_NOTIFICATIONS="email"
+WATCHTOWER_NOTIFICATIONS_LEVEL=error
+WATCHTOWER_NOTIFICATION_REPORT=true
+WATCHTOWER_NOTIFICATION_TEMPLATE="/config/watchtower/notify/templates/notify.tmpl"
 WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
+WATCHTOWER_NOTIFICATION_LOG_STDOUT=true
+WATCHTOWER_NOTIFICATIONS_HOSTNAME="$HOSTNAME"
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${CONTAINER_EMAIL_RELAY_PORT:-587}
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${CONTAINER_EMAIL_RELAY_SERVER:-$HOSTNAME}
 WATCHTOWER_NOTIFICATION_EMAIL_FROM=no-reply@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
@@ -2962,15 +2982,25 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
       if [ "$create_service" != "--publish" ] && [ "$create_service" != " " ]; then
         if [ "$set_listen_on_all" = "yes" ]; then
           for custom_port in $set_listen_port; do
-            set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $2}' | grep '^' || echo "${custom_port//*:/}")"
-            set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^' || echo "${set_custom_port//:/}")"
-            __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+            if echo "$custom_port" | grep -q ":.*.:"; then
+              set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $3}' | grep '^')"
+              set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $2}' | grep '^')"
+              __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+            elif echo "$custom_port" | grep -q "[0-9]:[0-9]"; then
+              set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $2}' | grep '^')"
+              set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^')"
+              __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+            elif echo "$custom_port" | grep -q "0-9]"; then
+              set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^')"
+              set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^')"
+              __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+            fi
           done
-          create_service="${create_service//:/}"
+          create_service="${create_service//$set_custom_service/}"
           create_service="${create_service//$set_custom_port/} "
-          create_service="${create_service//set_custom_service/}"
+          create_service="${create_service//:/}"
         fi
-        service="${create_service// /}"
+        service="$create_service"
         if [ -n "$service" ] && [ "$service" != " " ]; then
           if echo "$service" | grep -q ":.*.:"; then
             set_host="$(echo "$service" | awk -F ':' '{print $1}')"
