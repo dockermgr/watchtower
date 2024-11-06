@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck shell=bash
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-##@Version           :  202410080902-git
+##@Version           :  202411061217-git
 # @@Author           :  Jason Hempstead
 # @@Contact          :  jason@casjaysdev.pro
 # @@License          :  LICENSE.md
 # @@ReadME           :  install.sh --help
 # @@Copyright        :  Copyright: (c) 2024 Jason Hempstead, Casjays Developments
-# @@Created          :  Tuesday, Oct 08, 2024 09:02 EDT
+# @@Created          :  Wednesday, Nov 06, 2024 12:17 EST
 # @@File             :  install.sh
 # @@Description      :  Container installer script for watchtower
 # @@Changelog        :  New script
@@ -29,7 +29,7 @@
 # shellcheck disable=SC2317
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 export APPNAME="watchtower"
-export VERSION="202410080902-git"
+export VERSION="202411061217-git"
 export REPO_BRANCH="${GIT_REPO_BRANCH:-main}"
 export USER="${SUDO_USER:-$USER}"
 export RUN_USER="${RUN_USER:-$USER}"
@@ -64,6 +64,25 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Make sure the scripts repo is installed
 scripts_check
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Setup application options
+setopts=$(getopt -o "i,s:,h:,d:,e:,m:,p:" --long "init,server:,host:,domain:,env:,mount:,port:" -n "$APPNAME" -- "$@" 2>/dev/null)
+set -- "${setopts[@]}" 2>/dev/null
+while :; do
+  case "$1" in #
+  --debug | --raw) shift 1 ;;
+  -a | --name) APPNAME="$2" && shift 2 ;;
+  -i | --init) ENV_INIT_SCRIPT_ONLY="yes" && shift 1 ;;
+  -s | --server) CONTAINER_FULL_HOST="$2" && shift 2 ;;
+  -h | --host) CONTAINER_OPT_HOSTNAME="$2" && shift 2 ;;
+  -d | --domain) CONTAINER_OPT_DOMAINNAME="$2" && shift 2 ;;
+  -e | --env) CONTAINER_OPT_ENV_VAR="$2 $CONTAINER_OPT_ENV_VAR" && shift 2 ;;
+  -m | --mount) CONTAINER_OPT_MOUNT_VAR="$2 $CONTAINER_OPT_MOUNT_VAR" && shift 2 ;;
+  -p | --port) CONTAINER_OPT_PORT_VAR="$2 $CONTAINER_OPT_PORT_VAR" && shift 2 ;;
+  --) shift 1 && break ;;
+  *) break ;;
+  esac
+done
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # image tag - [docker pull DOCKER_HUB_IMAGE_URL:tag]
 DOCKER_HUB_IMAGE_TAG="latest"
@@ -147,9 +166,9 @@ __printf_spacing_color() { __printf_space "$1" "40" "$2" "$3"; }
 __printf_color() { printf "%b" "$(tput setaf "$1" 2>/dev/null)" "$2" "$(tput sgr0 2>/dev/null)" && printf '\n'; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __cmd_exists() { type -p $1 &>/dev/null || return 1; }
-__remove_extra_spaces() { sed 's/\( \)*/\1/g;s|^ ||g'; }
 __grep_char() { grep '[a-zA-Z0-9].[a-zA-Z0-9]' | grep '^' || return 1; }
 __docker_check() { [ -n "$(type -p docker 2>/dev/null)" ] || return 1; }
+__remove_extra_spaces() { sed 's/\( \)*/\1/g;s|^ ||g' | sed 's/^[ \t]*//'; }
 __set_vhost_alias() { echo "$1" | __remove_extra_spaces | grep "$2$" | sed "s|$2$|$3|g"; }
 __docker_ps_all() { docker ps -a 2>&1 | grep -i ${1:-} "$CONTAINER_NAME" && return 0 || return 1; }
 __password() { head -n1000 -c 10000 "/dev/urandom" | tr -dc '0-9a-zA-Z' | head -c${1:-16} && echo ""; }
@@ -162,6 +181,9 @@ __container_is_running() { docker ps 2>&1 | grep -i "$CONTAINER_NAME" | grep -qi
 __docker_init() { [ -n "$(type -p dockermgr 2>/dev/null)" ] && dockermgr init || printf_exit "Failed to Initialize the docker installer"; }
 __netstat() { netstat -taupln 2>/dev/null | grep -vE 'WAIT|ESTABLISHED|docker-pro' | awk -F ' ' '{print $4}' | sed 's|.*:||g' | grep -E '[0-9]' | sort -Vu | grep "^${1:-.*}$" || return 1; }
 __retrieve_custom_env() { [ -f "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.${1:-custom}.conf" ] && cat "$DOCKERMGR_CONFIG_DIR/env/$CONTAINER_NAME.${1:-custom}.conf" | grep -Ev '^$|^#' | grep '=' | grep '^' || __custom_docker_env | grep -Ev '^$|^#' | grep '=' | grep '^' || return 1; }
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+__get_user_id() { grep -s "^$1:" /etc/passwd | awk -F: '{print $3}' | grep '^[0-9]' || echo "$(id -u)"; }
+__get_group_id() { grep -s "^$1:" /etc/group | awk -F: '{print $3}' | grep '^[0-9]' || echo "$(id -g)"; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __get_proxy_url() { echo "${1//\/*{/}" | grep -q '[0-9]:.*:[0-9]' && echo "${1%:*}" || echo "$1"; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -179,8 +201,11 @@ __public_ip() { curl -q -LSsf ${1:--4} "http://ifconfig.co" | grep -v '^$' | hea
 __local_lan_ip() { __ifconfig $SET_LAN_DEV | grep -w 'inet' | awk -F ' ' '{print $2}' | __is_private_ip | head -n1 | grep '^' || ip address show $SET_LAN_DEV 2>&1 | grep 'inet ' | awk -F ' ' '{print $2}' | sed 's|/.*||g' | __is_private_ip | grep -v '^$' | head -n1 | grep '^' || echo "$CURRENT_IP_4" | grep '^' || return 1; }
 __my_default_lan_address() { __ifconfig $SET_LAN_DEV | grep -w 'inet' | awk -F ' ' '{print $2}' | head -n1 | grep '^' || ip address show $SET_LAN_DEV 2>&1 | grep 'inet ' | awk -F ' ' '{print $2}' | sed 's|/.*||g' | grep -v '^$' | head -n1 | grep '^' || echo "$CURRENT_IP_4" | grep '^' || return 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+__get_device_ip_6() { ip a show "${1:-docker0}" 2>/dev/null | grep 'inet6' | awk -F ' ' '{print $2}' | sed 's|/[0-9].*||g' | head -n1 | grep '^' || false; }
+__get_device_ip_4() { ip a show "${1:-docker0}" 2>/dev/null | grep -v 'inet6' | grep 'inet' | awk -F ' ' '{print $2}' | sed 's|/[0-9].*||g' | head -n1 | grep '^' || false; }
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __port() { echo "$((50000 + $RANDOM % 1000))" | grep '^' || return 1; }
-__port_in_use() { { [ -d "/etc/nginx/vhosts.d" ] && grep -wRsq "${1:-443}" "/etc/nginx/vhosts.d" || __netstat | grep -q "${1:-443}"; } && return 1 || return 0; }
+__port_in_use() { if { [ -d "/etc/nginx/vhosts.d" ] && grep -wRsq "${1:-443}" "/etc/nginx/vhosts.d" || __netstat | grep -q "${1:-443}"; }; then return 1; else return 0; fi; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __if_file_contains() { grep -sR "$1" "$2" | grep -Ev '#|^$' | grep -q '^' || return 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -188,6 +213,7 @@ __enable_ssl() { { [ "$SSL_ENABLED" = "yes" ] || [ "$SSL_ENABLED" = "true" ]; } 
 __ssl_certs() { [ -f "$HOST_SSL_CA" ] && [ -f "$HOST_SSL_CRT" ] && [ -f "$HOST_SSL_KEY" ] && return 0 || return 1; }
 __check_ssl_cert() { if curl -q -viLSsf "${1:-$CONTAINER_HOSTNAME}" 2>&1 | grep -qE 'SSL certificate problem|does not match'; then return 0; else return 1; fi; }
 __create_cert() { if __cmd_exists certbot && [ -f "/etc/certbot/dns.conf" ]; then certbot certonly -vvvv --agree-tos --email ssl-admin@$HOSTNAME -n --expand --dns-rfc2136 --dns-rfc2136-credentials "/etc/certbot/dns.conf" -d "$CONTAINER_HOSTNAME" -d "*.$CONTAINER_HOSTNAME" >/dev/null 2>&1 || return 2; fi; }
+__get_service_port() { __sudo netstat -taupln | grep 'LISTEN' | awk '{print $4","$7}' | sed 's|:$||g;s|,.*/|,|g' | awk -F ':' '{print $NF}' | grep -v 'docker-proxy' | awk -F ',' '{print $2","$1}' | sort -u | grep "$1" || return 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Ensure docker is installed and running
 __docker_check || __docker_init
@@ -200,8 +226,25 @@ __create_secret_key() { __cmd_exists openssl && openssl rand -hex ${1:-64} || __
 # hash the password
 __hash_password() { __cmd_exists htpasswd && htpasswd -bnBC 10 "" "$1" | tr -d ':\n' | sed 's/$2y/$2a/' || return 1; }
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+__disable_service_if_port() {
+  local port service exitCode=1
+  for port in "$@"; do
+    service="$(__get_service_port "$port")"
+    if [ -n "$service" ]; then
+      service="$(echo "$service" | awk -F ',' '{print $1}')"
+      __sudo systemctl disable --now "$service" >/dev/null 2>&1 && exitCode=$((exitCode++))
+    fi
+  done
+  return $exitCode
+}
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define any pre-install scripts
 __run_pre_install() {
+
+  return 0
+}
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+__pre_docker_install_commands() {
 
   return 0
 }
@@ -222,25 +265,9 @@ run_post_custom() {
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __show_post_message() {
   __printf_spacing_color 127 "To manually update run:" "$HOST_CRON_COMMAND"
+
   return 0
 }
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Setup application options
-setopts=$(getopt -o "i,s:,h:,d:,e:,m:,p:" --long "init,server:,host:,domain:,env:,mount:,port:" -n "$APPNAME" -- "$@" 2>/dev/null)
-set -- "${setopts[@]}" 2>/dev/null
-while :; do
-  case "$1" in #
-  -i | --init) ENV_INIT_SCRIPT_ONLY="yes" && shift 1 ;;
-  -s | --server) CONTAINER_FULL_HOST="$2" && shift 2 ;;
-  -h | --host) CONTAINER_OPT_HOSTNAME="$2" && shift 2 ;;
-  -d | --domain) CONTAINER_OPT_DOMAINNAME="$2" && shift 2 ;;
-  -e | --env) CONTAINER_OPT_ENV_VAR="$2 $CONTAINER_OPT_ENV_VAR" && shift 2 ;;
-  -m | --mount) CONTAINER_OPT_MOUNT_VAR="$2 $CONTAINER_OPT_MOUNT_VAR" && shift 2 ;;
-  -p | --port) CONTAINER_OPT_PORT_VAR="$2 $CONTAINER_OPT_PORT_VAR" && shift 2 ;;
-  --) shift 1 && break ;;
-  *) break ;;
-  esac
-done
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 [ -n "$(type -P sudo)" ] && sudo -n true && sudo true && DOCKERMGR_USER_CAN_SUDO="true"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -288,6 +315,12 @@ CONTAINER_WORK_DIR=""
 USER_ID_ENABLED="no"
 CONTAINER_USER_ID=""
 CONTAINER_GROUP_ID=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Set user to docker run --user [userName]
+DOCKER_ADD_USER=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# Set group to docker run --group-add [groupName]
+DOCKER_ADD_GROUP=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set runas user - default root - [mysql]
 CONTAINER_USER_RUN=""
@@ -373,7 +406,7 @@ HOST_MODULES_MOUNT_ENABLED="no"
 CONTAINER_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set container hostname and domain - Default: [$APPNAME.$SET_HOST_FULL_NAME] [$SET_HOST_FULL_DOMAIN] or [hostname]
-CONTAINER_HOSTNAME=""
+CONTAINER_HOSTNAME="hostname"
 CONTAINER_DOMAINNAME="hostname"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the network type - default is bridge - [bridge/host]
@@ -395,7 +428,7 @@ CONTAINER_PROTOCOL="http"
 CONTAINER_DNS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup nginx proxy variables - [yes/no] [yes/no] [http] [https] [yes/no] [ip_address]
-HOST_NGINX_ENABLED="yes"
+HOST_NGINX_ENABLED="no"
 HOST_NGINX_SSL_ENABLED="yes"
 HOST_NGINX_HTTP_PORT="80"
 HOST_NGINX_HTTPS_PORT="443"
@@ -410,10 +443,10 @@ HOST_NGINX_VHOST_CONFIG_NAME=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Enable this if container is running a webserver - [yes/no] [internalPort] [yes/no] [yes/no] [listen]
 CONTAINER_WEB_SERVER_ENABLED="no"
-CONTAINER_WEB_SERVER_INT_PORT="8080"
+CONTAINER_WEB_SERVER_INT_PORT="80"
 CONTAINER_WEB_SERVER_SSL_ENABLED="no"
 CONTAINER_WEB_SERVER_AUTH_ENABLED="no"
-CONTAINER_WEB_SERVER_LISTEN_ON="127.0.0.10"
+CONTAINER_WEB_SERVER_LISTEN_ON="docker"
 CONTAINER_WEB_SERVER_INT_PATH="/"
 CONTAINER_WEB_SERVER_EXT_PATH="/"
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -512,6 +545,10 @@ CONTAINER_SECRET_KEY_TOKEN="random"
 CONTAINER_USER_ADMIN_HASH_ENV=""
 CONTAINER_USER_ADMIN_HASH_PASS=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+# If container requires a db connection string variable set it here
+CONTAINER_DB_ENV_NAME=""
+CONTAINER_DB_ENV_STRING=""
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Add the names of processes - [apache,mysql]
 CONTAINER_SERVICES_LIST=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -523,7 +560,7 @@ CONTAINER_MOUNT_DATA_MOUNT_DIR=""
 CONTAINER_MOUNT_CONFIG_ENABLED="yes"
 CONTAINER_MOUNT_CONFIG_MOUNT_DIR=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# Define additional mounts - [/dir:/dir,/otherdir:/otherdir]
+# Define additional mounts - add HOST/ to use $DATA_DIR/rootfs - [/dir:/dir,/otherdir:/otherdir]
 CONTAINER_MOUNTS=""
 CONTAINER_MOUNTS+=""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -639,18 +676,18 @@ WATCHTOWER_HTTP_API_UPDATE=true
 WATCHTOWER_HTTP_API_METRICS=true
 WATCHTOWER_INCLUDE_STOPPED=true
 WATCHTOWER_REVIVE_STOPPED=false
-WATCHTOWER_NO_STARTUP_MESSAGE=true
-WATCHTOWER_NOTIFICATIONS="email"
-WATCHTOWER_NOTIFICATIONS_LEVEL=error
-WATCHTOWER_NOTIFICATION_REPORT=true
-WATCHTOWER_NOTIFICATION_TEMPLATE="/config/watchtower/notify/templates/notify.tmpl"
-WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
-WATCHTOWER_NOTIFICATION_LOG_STDOUT=true
-WATCHTOWER_NOTIFICATIONS_HOSTNAME="$HOSTNAME"
-WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${CONTAINER_EMAIL_RELAY_PORT:-587}
-WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${CONTAINER_EMAIL_RELAY_SERVER:-$HOSTNAME}
-WATCHTOWER_NOTIFICATION_EMAIL_FROM=no-reply@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
-WATCHTOWER_NOTIFICATION_EMAIL_TO=administrator@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
+WATCHTOWER_NO_STARTUP_MESSAGE=false
+#WATCHTOWER_NOTIFICATIONS="email"
+#WATCHTOWER_NOTIFICATIONS_LEVEL=error
+#WATCHTOWER_NOTIFICATION_REPORT=true
+#WATCHTOWER_NOTIFICATION_TEMPLATE=""
+#WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
+#WATCHTOWER_NOTIFICATION_LOG_STDOUT=true
+#WATCHTOWER_NOTIFICATIONS_HOSTNAME="$HOSTNAME"
+#WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=${CONTAINER_EMAIL_RELAY_PORT:-587}
+#WATCHTOWER_NOTIFICATION_EMAIL_SERVER=${CONTAINER_EMAIL_RELAY_SERVER:-$HOSTNAME}
+#WATCHTOWER_NOTIFICATION_EMAIL_FROM=no-reply@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
+#WATCHTOWER_NOTIFICATION_EMAIL_TO=administrator@${CONTAINER_EMAIL_DOMAIN:-$CONTAINER_HOSTNAME}
 #WATCHTOWER_NOTIFICATION_GOTIFY_URL="$GOTIFY_URL"
 #WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN="$GOTIFY_TOKEN"
 
@@ -725,6 +762,8 @@ ENV_CONTAINER_WORK_DIR="\${ENV_CONTAINER_WORK_DIR:-$CONTAINER_WORK_DIR}"
 ENV_USER_ID_ENABLED="\${ENV_USER_ID_ENABLED:-$USER_ID_ENABLED}"
 ENV_CONTAINER_USER_ID="\${ENV_CONTAINER_USER_ID:-$CONTAINER_USER_ID}"
 ENV_CONTAINER_GROUP_ID="\${ENV_CONTAINER_GROUP_ID:-$CONTAINER_GROUP_ID}"
+ENV_DOCKER_ADD_USER="\${ENV_DOCKER_ADD_USER:-$DOCKER_ADD_USER}}"
+ENV_DOCKER_ADD_GROUP="\${ENV_DOCKER_ADD_GROUP:-$DOCKER_ADD_GROUP}}"
 ENV_CONTAINER_USER_RUN="\${ENV_CONTAINER_USER_RUN:-$CONTAINER_USER_RUN}"
 ENV_CONTAINER_PRIVILEGED_ENABLED="\${ENV_CONTAINER_PRIVILEGED_ENABLED:-$CONTAINER_PRIVILEGED_ENABLED}"
 ENV_CONTAINER_SHM_SIZE="\${ENV_CONTAINER_SHM_SIZE:-$CONTAINER_SHM_SIZE}"
@@ -1059,6 +1098,10 @@ elif [ "$CONTAINER_PROTOCOL" = "https" ]; then
   CONTAINER_WEB_SERVER_PROTOCOL="https"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if [ "$CONTAINER_WEB_SERVER_LISTEN_ON" = "docker" ]; then
+  CONTAINER_WEB_SERVER_LISTEN_ON="$(__get_device_ip_4 || echo '172.17.0.1')"
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Setup containers hostname
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 [ -n "$ENV_HOSTNAME" ] && CONTAINER_HOSTNAME="$ENV_HOSTNAME"
@@ -1179,6 +1222,8 @@ CONTAINER_WORK_DIR="${ENV_CONTAINER_WORK_DIR:-$CONTAINER_WORK_DIR}"
 USER_ID_ENABLED="${ENV_USER_ID_ENABLED:-$USER_ID_ENABLED}"
 CONTAINER_USER_ID="${ENV_CONTAINER_USER_ID:-$CONTAINER_USER_ID}"
 CONTAINER_GROUP_ID="${ENV_CONTAINER_GROUP_ID:-$CONTAINER_GROUP_ID}"
+DOCKER_ADD_USER="${ENV_DOCKER_ADD_USER:-$DOCKER_ADD_USER}}"
+DOCKER_ADD_GROUP="${ENV_DOCKER_ADD_GROUP:-$DOCKER_ADD_GROUP}}"
 CONTAINER_USER_RUN="${ENV_CONTAINER_USER_RUN:-$CONTAINER_USER_RUN}"
 CONTAINER_PRIVILEGED_ENABLED="${ENV_CONTAINER_PRIVILEGED_ENABLED:-$CONTAINER_PRIVILEGED_ENABLED}"
 CONTAINER_SHM_SIZE="${ENV_CONTAINER_SHM_SIZE:-$CONTAINER_SHM_SIZE}"
@@ -1391,15 +1436,23 @@ fi
 # Set user ID
 if [ "$USER_ID_ENABLED" = "yes" ]; then
   if [ -z "$CONTAINER_USER_ID" ]; then
-    DOCKER_SET_OPTIONS_ENV+=("--env PUID=$(id -u)")
-  else
-    DOCKER_SET_OPTIONS_ENV+=("--env PUID=$CONTAINER_USER_ID")
+    CONTAINER_USER_ID="$(__get_user_id "$USER")"
   fi
   if [ -z "$CONTAINER_GROUP_ID" ]; then
-    DOCKER_SET_OPTIONS_ENV+=("--env PGID=$(id -g)")
-  else
-    DOCKER_SET_OPTIONS_ENV+=("--env PGID=$CONTAINER_GROUP_ID")
+    CONTAINER_GROUP_ID="$(__get_group_id $USER)"
   fi
+  DOCKER_SET_OPTIONS_ENV+=("--env PUID=$CONTAINER_USER_ID")
+  DOCKER_SET_OPTIONS_ENV+=("--env PGID=$CONTAINER_GROUP_ID")
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if [ -n "$DOCKER_ADD_USER" ]; then
+  DOCKER_ADD_USER="$(__get_user_id "$DOCKER_ADD_USER")"
+  DOCKER_SET_OPTIONS_DEFAULT+=("--user $DOCKER_ADD_USER")
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if [ -n "$DOCKER_ADD_GROUP" ]; then
+  DOCKER_ADD_GROUP="$(__get_group_id "$DOCKER_ADD_GROUP")"
+  DOCKER_SET_OPTIONS_DEFAULT+=("--group-add $DOCKER_ADD_GROUP")
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Set the process owner
@@ -1947,6 +2000,11 @@ if [ "$CONTAINER_SUPABASE_ENABLED" = "yes" ]; then
   MESSAGE_SUPABASE="true"
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+if [ -n "$CONTAINER_DB_ENV_NAME" ] && [ -n "$CONTAINER_DB_ENV_STRING" ]; then
+  DOCKER_SET_OPTIONS_ENV+=("--env $CONTAINER_DB_ENV_NAME=$CONTAINER_DB_ENV_STRING")
+  SHOW_DATABASE_CONNECTION_STRING="yes"
+fi
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #
 if [ "$CONTAINER_DATABASE_ENABLED" = "yes" ]; then
   if [ -n "$CONTAINER_DATABASE_USER_ROOT" ]; then
@@ -2092,11 +2150,17 @@ if [ -n "$CONTAINER_MOUNTS" ]; then
   CONTAINER_MOUNTS="${CONTAINER_MOUNTS//,/ }"
   for mnt in $CONTAINER_MOUNTS; do
     if [ "$mnt" != "" ] && [ "$mnt" != " " ]; then
+      if echo "$mnt" | grep -q '^HOST/'; then
+        mnt="${mnt//HOST\//}"
+        host_mnt="${mnt//:*/}"
+        cont_mnt="${mnt//*:/}"
+        [ -n "$cont_mnt" ] && mnt="$HOST_ROOTFS_DIR/$host_mnt:$cont_mnt" || mnt="$HOST_ROOTFS_DIR/$host_mnt:$host_mnt"
+      fi
       echo "$mnt" | grep -q ':' || mnt="$mnt:$mnt"
       DOCKER_SET_MNT+="--volume $mnt "
     fi
   done
-  unset mnt
+  unset mnt host_mnt cont_mnt
 fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 if [ -n "$CONTAINER_OPT_MOUNT_VAR" ]; then
@@ -2593,6 +2657,7 @@ if [ -x "$DOCKERMGR_INSTALL_SCRIPT" ]; then
   fi
   exit $exitCode
 else
+  __pre_docker_install_commands
   __create_docker_script
   EXECUTE_DOCKER_SCRIPT="$EXECUTE_DOCKER_CMD"
   if [ "$INIT_SCRIPT_ONLY" = "no" ] && [ -n "$EXECUTE_DOCKER_SCRIPT" ]; then
@@ -2963,6 +3028,10 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
     fi
     printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
   fi
+  if [ -n "$CONTAINER_DB_ENV_NAME" ] && [ -n "$CONTAINER_DB_ENV_STRING" ]; then
+    __printf_spacing_color 130 "$CONTAINER_DB_ENV_NAME:" "$CONTAINER_DB_ENV_STRING"
+    printf '# - - - - - - - - - - - - - - - - - - - - - - - - - -\n'
+  fi
   if [ -f "$HOST_ROOTFS_DIR/config/auth/htpasswd" ]; then
     MESSAGE="true"
     __printf_spacing_color "5" "Username:" "root"
@@ -2982,23 +3051,29 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
       if [ "$create_service" != "--publish" ] && [ "$create_service" != " " ]; then
         if [ "$set_listen_on_all" = "yes" ]; then
           for custom_port in $set_listen_port; do
-            if echo "$custom_port" | grep -q ":.*.:"; then
+            if echo "$custom_port" | grep -q ":[0-9].*:"; then
               set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $3}' | grep '^')"
               set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $2}' | grep '^')"
-              __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+              if [ -n "$set_custom_port" ] && [ -n "$set_custom_service" ]; then
+                __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+              fi
             elif echo "$custom_port" | grep -q "[0-9]:[0-9]"; then
               set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $2}' | grep '^')"
               set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^')"
-              __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
-            elif echo "$custom_port" | grep -q "0-9]"; then
+              if [ -n "$set_custom_port" ] && [ -n "$set_custom_service" ]; then
+                __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+              fi
+            elif echo "$custom_port" | grep -q "[0-9]"; then
               set_custom_port="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^')"
               set_custom_service="$(echo "$custom_port" | awk -F ':' '{print $1}' | grep '^')"
-              __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+              if [ -n "$set_custom_port" ] && [ -n "$set_custom_service" ]; then
+                __printf_spacing_color "6" "Port $set_custom_service is mapped to:" "$set_custom_port"
+              fi
             fi
+            create_service="${create_service//$set_custom_service/}"
+            create_service="${create_service//$set_custom_port/} "
+            create_service="${create_service//:/}"
           done
-          create_service="${create_service//$set_custom_service/}"
-          create_service="${create_service//$set_custom_port/} "
-          create_service="${create_service//:/}"
         fi
         service="$create_service"
         if [ -n "$service" ] && [ "$service" != " " ]; then
@@ -3011,14 +3086,16 @@ if [ "$CONTAINER_INSTALLED" = "true" ] || __docker_ps_all -q; then
             set_port="$(echo "$service" | awk -F ':' '{print $1}')"
             set_service="$(echo "$service" | awk -F ':' '{print $2}')"
           fi
-          get_servive="$set_service"
-          set_service="${set_service//\/*/}"
-          listen="${set_host//0.0.0.0/$HOST_LISTEN_ADDR}:$set_port"
-          echo "$get_servive" | grep -qE '[0-9]/tcp|[0-9]/udp' && type="${get_servive//*\//}" || unset type
-          [ -n "$type" ] && get_listen="$listen/$type" || get_listen="$listen"
-          set_listen=$(printf '%s' "$get_listen")
-          if [ -n "$listen" ]; then
-            __printf_spacing_color "6" "Port $set_service is mapped to:" "$set_listen"
+          if [ -n "$set_port" ] && [ -n "$set_port" ]; then
+            get_servive="$set_service"
+            set_service="${set_service//\/*/}"
+            listen="${set_host//0.0.0.0/$HOST_LISTEN_ADDR}:$set_port"
+            echo "$get_servive" | grep -qE '[0-9]/tcp|[0-9]/udp' && type="${get_servive//*\//}" || unset type
+            [ -n "$type" ] && get_listen="$listen/$type" || get_listen="$listen"
+            set_listen=$(printf '%s' "$get_listen")
+            if [ -n "$listen" ]; then
+              __printf_spacing_color "6" "Port $set_service is mapped to:" "$set_listen"
+            fi
           fi
         fi
       fi
